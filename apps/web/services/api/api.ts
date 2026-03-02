@@ -69,6 +69,111 @@ export async function sendReply(
     }
 }
 
+// ── AI Assistant (REST) ───────────────────────────────────────────────────────
+
+async function aiPost<T>(path: string, body?: object): Promise<T> {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/${path}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { message?: string }).message ?? `${path} failed`);
+    }
+    return res.json() as Promise<T>;
+}
+
+async function aiGet<T>(path: string): Promise<T> {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/${path}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error(`GET ${path} failed`);
+    return res.json() as Promise<T>;
+}
+
+export type ResponseTone = "professional" | "friendly" | "casual" | "strict";
+
+export interface AiAssistantConfig {
+    userId: number;
+    autoReplyEnabled: boolean;
+    responseTone: ResponseTone;
+    confidenceThreshold: number;
+}
+
+export function getAiConfig(): Promise<AiAssistantConfig> {
+    return aiGet("ai-assistant/config");
+}
+
+export function updateAiConfig(
+    patch: Partial<Pick<AiAssistantConfig, "autoReplyEnabled" | "responseTone" | "confidenceThreshold">>,
+): Promise<AiAssistantConfig> {
+    return aiPost("ai-assistant/config", patch);
+}
+
+export function getAutoReplyStatus(): Promise<{ enabled: boolean }> {
+    return aiGet("ai-assistant/auto-reply/status");
+}
+
+export function setAutoReply(enabled: boolean): Promise<{ enabled: boolean }> {
+    return aiPost("ai-assistant/auto-reply/enable", { enabled });
+}
+
+export function testAiReply(text: string): Promise<{ reply: string }> {
+    return aiPost("ai-assistant/test-reply", { text });
+}
+
+// ── Knowledge Base (REST) ─────────────────────────────────────────────────────
+
+export interface IndexedFile {
+    name: string;
+    chunks: number;
+    uploadedAt: string;
+}
+
+export async function uploadKnowledgePdf(
+    file: File,
+): Promise<{ success: boolean; chunks: number; file: string }> {
+    const token = getToken();
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${API_URL}/knowledge/upload`, {
+        method: "POST",
+        // Do NOT set Content-Type — browser sets multipart/form-data + boundary automatically
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+    });
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { message?: string }).message ?? "Upload failed");
+    }
+    return res.json();
+}
+
+export function askKnowledge(
+    question: string,
+): Promise<{ answer: string; usedChunks?: string[] }> {
+    return aiPost("knowledge/ask", { question });
+}
+
+export function getKnowledgeFiles(): Promise<{ files: IndexedFile[] }> {
+    return aiGet("knowledge/files");
+}
+
+export async function clearKnowledge(): Promise<void> {
+    const token = getToken();
+    const res = await fetch(`${API_URL}/knowledge/clear`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error("Failed to clear knowledge base");
+}
+
 // abonări la evenimente realtime
 export function subscribeToNewMessage(handler: (message: any) => void) {
     const socket = getSocket();
