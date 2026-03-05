@@ -1,27 +1,38 @@
 import { Paperclip, Smile, Send, Zap, Tag } from "lucide-react";
-import { SUGGESTIONS } from "@/lib/chatUtils";
 import { SuggestionsPanel } from "./SuggestionsPanel";
 
 interface MessageInputProps {
   value: string;
   showSuggestions: boolean;
+  suggestions: string[];
+  isLoadingSuggestions: boolean;
   onValueChange: (value: string) => void;
   onShowSuggestionsChange: (show: boolean) => void;
+  onRefreshSuggestions: () => void;
   onSend: () => void;
 }
 
 export function MessageInput({
   value,
   showSuggestions,
+  suggestions,
+  isLoadingSuggestions,
   onValueChange,
   onShowSuggestionsChange,
+  onRefreshSuggestions,
   onSend,
 }: MessageInputProps) {
+  const handleSuggestiiAi = () => {
+    onRefreshSuggestions();
+    onShowSuggestionsChange(true);
+  };
+
   return (
     <div className="p-4 border-t border-slate-200 bg-white">
       {showSuggestions && (
         <SuggestionsPanel
-          suggestions={SUGGESTIONS}
+          suggestions={suggestions}
+          isLoading={isLoadingSuggestions}
           onSelect={(s) => {
             onValueChange(s);
             onShowSuggestionsChange(false);
@@ -61,7 +72,10 @@ export function MessageInput({
 
       <div className="flex items-center justify-between mt-2 px-2">
         <div className="flex items-center gap-4 text-xs text-slate-500">
-          <button className="hover:text-blue-600 transition-colors flex items-center gap-1">
+          <button
+            onClick={handleSuggestiiAi}
+            className="hover:text-blue-600 transition-colors flex items-center gap-1"
+          >
             <Zap className="w-3 h-3" />
             Sugestii AI
           </button>
