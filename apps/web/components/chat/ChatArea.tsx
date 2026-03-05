@@ -9,9 +9,10 @@ interface ChatAreaProps {
   messages: Message[];
   isLoadingMessages: boolean;
   messageInput: string;
-  showSuggestions: boolean;
+  suggestions: string[];
+  isLoadingSuggestions: boolean;
   onMessageInputChange: (value: string) => void;
-  onShowSuggestionsChange: (show: boolean) => void;
+  onRefreshSuggestions: () => void;
   onSend: () => void;
 }
 
@@ -20,9 +21,10 @@ export function ChatArea({
   messages,
   isLoadingMessages,
   messageInput,
-  showSuggestions,
+  suggestions,
+  isLoadingSuggestions,
   onMessageInputChange,
-  onShowSuggestionsChange,
+  onRefreshSuggestions,
   onSend,
 }: ChatAreaProps) {
   if (!conversation) {
@@ -43,9 +45,10 @@ export function ChatArea({
       />
       <MessageInput
         value={messageInput}
-        showSuggestions={showSuggestions}
+        suggestions={suggestions}
+        isLoadingSuggestions={isLoadingSuggestions}
         onValueChange={onMessageInputChange}
-        onShowSuggestionsChange={onShowSuggestionsChange}
+        onRefreshSuggestions={onRefreshSuggestions}
         onSend={onSend}
       />
     </div>
