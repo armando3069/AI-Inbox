@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 import { buildChannels } from "@/lib/chatUtils";
-import { sendReply, subscribeToNewMessage } from "@/services/api/api";
+import { sendReply, subscribeToNewMessage, getSuggestedReplies } from "@/services/api/api";
 import { notifyNewMessage } from "@/lib/notify";
 import type { ConversationViewModel, Message } from "@/lib/types";
 import { Sidebar } from "./Sidebar";
@@ -16,15 +16,54 @@ export function ChatLayout() {
   const [selectedConversation, setSelectedConversation] = useState<ConversationViewModel | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
   const { conversations, setConversations, isLoading: isLoadingConversations } = useConversations();
 
+  // ── Suggested replies ────────────────────────────────────────────────────
+
+  const refreshSuggestions = useCallback(async (convId: number) => {
+    setIsLoadingSuggestions(true);
+    try {
+      const { suggestions: s } = await getSuggestedReplies(convId);
+      setSuggestions(s);
+    } catch {
+      // silently ignore — suggestions panel keeps previous data
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  }, []);
+
+  // Stable ref so handlePreviewUpdate can access it without re-creating
+  const refreshSuggestionsRef = useRef(refreshSuggestions);
+  useEffect(() => { refreshSuggestionsRef.current = refreshSuggestions; });
+
+  // Refresh when selected conversation changes
+  useEffect(() => {
+    if (!selectedConversation) {
+      setSuggestions([]);
+      return;
+    }
+    refreshSuggestions(selectedConversation.id);
+  }, [selectedConversation?.id, refreshSuggestions]);
+
+  // ── Conversation list preview update ────────────────────────────────────
+
   // Stable callback: updates a conversation's preview in the list when a message arrives.
+  // Also refreshes suggestions if the message belongs to the selected conversation.
+  const selectedConvRef = useRef(selectedConversation);
+  useEffect(() => { selectedConvRef.current = selectedConversation; });
+
   const handlePreviewUpdate = useCallback(
     (conversationId: number, lastMessage: string, time: string) => {
       setConversations((prev) =>
         prev.map((c) => (c.id === conversationId ? { ...c, lastMessage, time } : c))
       );
+      // Refresh suggestions when a new message arrives in the active conversation
+      if (selectedConvRef.current?.id === conversationId) {
+        refreshSuggestionsRef.current(conversationId);
+      }
     },
     [setConversations]
   );
@@ -34,14 +73,12 @@ export function ChatLayout() {
     onPreviewUpdate: handlePreviewUpdate,
   });
 
-  // Stable refs so the subscription effect doesn't re-run on every render
+  // ── Global real-time subscription ────────────────────────────────────────
+
   const conversationsRef = useRef(conversations);
   useEffect(() => { conversationsRef.current = conversations; });
-  const selectedConvRef = useRef(selectedConversation);
-  useEffect(() => { selectedConvRef.current = selectedConversation; });
 
-  // Global subscription: notify for client messages in conversations OTHER than
-  // the currently selected one (selected conversation is handled by useMessages).
+  // Notify for client messages in conversations OTHER than the selected one
   useEffect(() => {
     const unsub = subscribeToNewMessage((msg: Message) => {
       if (msg.sender_type !== "client" || !msg.text) return;
@@ -59,12 +96,16 @@ export function ChatLayout() {
     return () => { unsub(); };
   }, []);
 
+  // ── Channels & filtering ─────────────────────────────────────────────────
+
   const channels = buildChannels(conversations);
 
   const filteredConversations = conversations.filter((conv) => {
     if (selectedChannel === "all") return true;
     return conv.platform === selectedChannel;
   });
+
+  // ── Send ─────────────────────────────────────────────────────────────────
 
   const handleSend = async () => {
     if (!messageInput.trim() || !selectedConversation) return;
@@ -97,8 +138,13 @@ export function ChatLayout() {
         isLoadingMessages={isLoadingMessages}
         messageInput={messageInput}
         showSuggestions={showSuggestions}
+        suggestions={suggestions}
+        isLoadingSuggestions={isLoadingSuggestions}
         onMessageInputChange={setMessageInput}
         onShowSuggestionsChange={setShowSuggestions}
+        onRefreshSuggestions={() => {
+          if (selectedConversation) refreshSuggestions(selectedConversation.id);
+        }}
         onSend={handleSend}
       />
     </div>
