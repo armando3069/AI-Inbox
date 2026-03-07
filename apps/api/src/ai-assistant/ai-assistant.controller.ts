@@ -24,6 +24,7 @@ import { TestReplyDto } from './dto/test-reply.dto';
 import { AutoReplyToggleDto } from './dto/auto-reply-toggle.dto';
 import { UpdateConfigDto } from './dto/update-config.dto';
 import { TranslateDto } from './dto/translate.dto';
+import { updateConversationLastMessage } from '../common/conversation.helper';
 import type { AuthenticatedRequest } from '../common/types';
 
 @Controller('ai-assistant')
@@ -213,6 +214,8 @@ export class AiAssistantController {
         timestamp: new Date(),
       },
     });
+
+    await updateConversationLastMessage(this.prisma, message);
 
     this.chatGateway.emitNewMessage(userId, message);
 
