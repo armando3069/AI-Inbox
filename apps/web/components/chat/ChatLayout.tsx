@@ -16,13 +16,16 @@ import { Sidebar } from "./Sidebar";
 import { ConversationList } from "./ConversationList";
 import { ChatArea } from "./ChatArea";
 
-const SUGGESTIONS_STALE_MS = 10 * 60 * 1000; // 10 minutes — do not re-fetch if key unchanged
-const SUGGESTIONS_GC_MS   = 30 * 60 * 1000; // 30 minutes — keep in cache across conversation switches
+const SUGGESTIONS_STALE_MS = 10 * 60 * 1000; // 10 minutes
+const SUGGESTIONS_GC_MS   = 30 * 60 * 1000; // 30 minutes
 
 export function ChatLayout() {
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [selectedConversation, setSelectedConversation] = useState<ConversationViewModel | null>(null);
   const [messageInput, setMessageInput] = useState("");
+
+  // ── Suggestions toggle (lifted from MessageInput so it resets on conv change) ─
+  const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
 
   const { conversations, setConversations, isLoading: isLoadingConversations } = useConversations();
 
@@ -35,6 +38,11 @@ export function ChatLayout() {
     const conv = conversations.find((c) => c.id === Number(pending));
     if (conv) setSelectedConversation(conv);
   }, [conversations]);
+
+  // Close suggestions panel when the user switches to a different conversation
+  useEffect(() => {
+    setIsSuggestionsOpen(false);
+  }, [selectedConversation?.id]);
 
   // ── Conversation list preview update ────────────────────────────────────
 
@@ -52,12 +60,14 @@ export function ChatLayout() {
     onPreviewUpdate: handlePreviewUpdate,
   });
 
-  // ── Suggested replies ────────────────────────────────────────────────────
+  // ── Suggested replies (lazy / manual mode) ───────────────────────────────
   //
-  // Key = [conversationId, lastMessageId].
-  // React Query re-fetches automatically when a new message arrives (lastMessageId
-  // changes). Tab switches, re-renders, and window-focus events do NOT trigger
-  // a re-fetch — the cached result is returned instead.
+  // enabled: false  →  never auto-fetches (no tokens spent on mount, tab switch,
+  //                    conversation load, or window focus)
+  //
+  // The query key includes lastMessageId so a future manual click after a new
+  // message arrives will automatically hit the backend with the right context.
+  // If lastMessageId is unchanged, the cached result is served (staleTime 10 min).
 
   const lastMessageId = messages[messages.length - 1]?.id ?? 0;
   const conversationId = selectedConversation?.id ?? 0;
@@ -68,7 +78,7 @@ export function ChatLayout() {
     refetch: refetchSuggestions,
   } = useQuery({
     ...aiAssistantQueryKeys.suggestedReplies(conversationId, lastMessageId),
-    enabled: conversationId > 0 && lastMessageId > 0,
+    enabled: false,
     staleTime: SUGGESTIONS_STALE_MS,
     gcTime: SUGGESTIONS_GC_MS,
     refetchOnWindowFocus: false,
@@ -78,8 +88,23 @@ export function ChatLayout() {
 
   const suggestions = suggestionsData?.suggestions ?? [];
 
+  // Toggle handler for the "Sugestii AI" button:
+  // • first click  → open panel + fetch (or serve cache if lastMessageId unchanged)
+  // • second click → close panel only, no fetch
+  const handleToggleSuggestions = useCallback(() => {
+    if (isSuggestionsOpen) {
+      setIsSuggestionsOpen(false);
+    } else {
+      setIsSuggestionsOpen(true);
+      refetchSuggestions();
+    }
+  }, [isSuggestionsOpen, refetchSuggestions]);
+
+  const handleCloseSuggestions = useCallback(() => {
+    setIsSuggestionsOpen(false);
+  }, []);
+
   // ── Global real-time subscription ────────────────────────────────────────
-  // Notify for client messages in conversations other than the selected one.
 
   const selectedConvRef = useRef(selectedConversation);
   useEffect(() => { selectedConvRef.current = selectedConversation; });
@@ -172,8 +197,10 @@ export function ChatLayout() {
         messageInput={messageInput}
         suggestions={suggestions}
         isLoadingSuggestions={isLoadingSuggestions}
+        isSuggestionsOpen={isSuggestionsOpen}
         onMessageInputChange={setMessageInput}
-        onRefreshSuggestions={() => { refetchSuggestions(); }}
+        onToggleSuggestions={handleToggleSuggestions}
+        onCloseSuggestions={handleCloseSuggestions}
         onUpdateConversation={handleUpdateConversation}
         onSend={handleSend}
       />
