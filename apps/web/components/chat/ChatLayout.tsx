@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useConversations } from "@/hooks/useConversations";
 import { useMessages } from "@/hooks/useMessages";
 import { buildChannels } from "@/lib/chatUtils";
 import { messagesService } from "@/services/messages/messages.service";
 import { conversationsService } from "@/services/conversations/conversations.service";
-import { aiAssistantService } from "@/services/ai-assistant/ai-assistant.service";
+import { aiAssistantQueryKeys } from "@/services/ai-assistant/ai-assistant.service";
 import { subscribeToNewMessage } from "@/services/ws/ws";
 import type { ContactInfoPatch } from "@/services/conversations/conversations.types";
 import { notifyNewMessage } from "@/lib/notify";
@@ -15,12 +16,13 @@ import { Sidebar } from "./Sidebar";
 import { ConversationList } from "./ConversationList";
 import { ChatArea } from "./ChatArea";
 
+const SUGGESTIONS_STALE_MS = 10 * 60 * 1000; // 10 minutes — do not re-fetch if key unchanged
+const SUGGESTIONS_GC_MS   = 30 * 60 * 1000; // 30 minutes — keep in cache across conversation switches
+
 export function ChatLayout() {
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [selectedConversation, setSelectedConversation] = useState<ConversationViewModel | null>(null);
   const [messageInput, setMessageInput] = useState("");
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
 
   const { conversations, setConversations, isLoading: isLoadingConversations } = useConversations();
 
@@ -34,46 +36,15 @@ export function ChatLayout() {
     if (conv) setSelectedConversation(conv);
   }, [conversations]);
 
-  // ── Suggested replies ────────────────────────────────────────────────────
-
-  const refreshSuggestions = useCallback(async (convId: number) => {
-    setIsLoadingSuggestions(true);
-    try {
-      const { suggestions: s } = await aiAssistantService.getSuggestedReplies(convId);
-      setSuggestions(s);
-    } catch {
-      // silently ignore — suggestions panel keeps previous data
-    } finally {
-      setIsLoadingSuggestions(false);
-    }
-  }, []);
-
-  const refreshSuggestionsRef = useRef(refreshSuggestions);
-  useEffect(() => { refreshSuggestionsRef.current = refreshSuggestions; });
-
-  useEffect(() => {
-    if (!selectedConversation) {
-      setSuggestions([]);
-      return;
-    }
-    refreshSuggestions(selectedConversation.id);
-  }, [selectedConversation?.id, refreshSuggestions]);
-
   // ── Conversation list preview update ────────────────────────────────────
-
-  const selectedConvRef = useRef(selectedConversation);
-  useEffect(() => { selectedConvRef.current = selectedConversation; });
 
   const handlePreviewUpdate = useCallback(
     (conversationId: number, lastMessage: string, time: string) => {
       setConversations((prev) =>
         prev.map((c) => (c.id === conversationId ? { ...c, lastMessage, time } : c))
       );
-      if (selectedConvRef.current?.id === conversationId) {
-        refreshSuggestionsRef.current(conversationId);
-      }
     },
-    [setConversations]
+    [setConversations],
   );
 
   const { messages, isLoading: isLoadingMessages } = useMessages({
@@ -81,7 +52,37 @@ export function ChatLayout() {
     onPreviewUpdate: handlePreviewUpdate,
   });
 
+  // ── Suggested replies ────────────────────────────────────────────────────
+  //
+  // Key = [conversationId, lastMessageId].
+  // React Query re-fetches automatically when a new message arrives (lastMessageId
+  // changes). Tab switches, re-renders, and window-focus events do NOT trigger
+  // a re-fetch — the cached result is returned instead.
+
+  const lastMessageId = messages[messages.length - 1]?.id ?? 0;
+  const conversationId = selectedConversation?.id ?? 0;
+
+  const {
+    data: suggestionsData,
+    isFetching: isLoadingSuggestions,
+    refetch: refetchSuggestions,
+  } = useQuery({
+    ...aiAssistantQueryKeys.suggestedReplies(conversationId, lastMessageId),
+    enabled: conversationId > 0 && lastMessageId > 0,
+    staleTime: SUGGESTIONS_STALE_MS,
+    gcTime: SUGGESTIONS_GC_MS,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+  });
+
+  const suggestions = suggestionsData?.suggestions ?? [];
+
   // ── Global real-time subscription ────────────────────────────────────────
+  // Notify for client messages in conversations other than the selected one.
+
+  const selectedConvRef = useRef(selectedConversation);
+  useEffect(() => { selectedConvRef.current = selectedConversation; });
 
   const conversationsRef = useRef(conversations);
   useEffect(() => { conversationsRef.current = conversations; });
@@ -172,9 +173,7 @@ export function ChatLayout() {
         suggestions={suggestions}
         isLoadingSuggestions={isLoadingSuggestions}
         onMessageInputChange={setMessageInput}
-        onRefreshSuggestions={() => {
-          if (selectedConversation) refreshSuggestions(selectedConversation.id);
-        }}
+        onRefreshSuggestions={() => { refetchSuggestions(); }}
         onUpdateConversation={handleUpdateConversation}
         onSend={handleSend}
       />
