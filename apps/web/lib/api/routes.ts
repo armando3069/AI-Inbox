@@ -7,6 +7,7 @@ export const ROUTES = {
   conversations: {
     contacts: "/conversations/contacts",
     contactInfo: (id: number) => `/conversations/${id}/contact-info`,
+    markAsRead: (id: number) => `/conversations/${id}/read`,
   },
   aiAssistant: {
     config: "/ai-assistant/config",

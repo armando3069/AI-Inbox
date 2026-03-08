@@ -7,16 +7,18 @@ export function mapConversationToViewModel(raw: any): ConversationViewModel {
     `Chat ${raw.external_chat_id}`;
   const seed = encodeURIComponent(name || raw.external_chat_id);
 
+  const lastMessageTimestamp = raw.last_message_at ?? raw.created_at;
+
   return {
     id: raw.id,
     contact: name,
     platform: raw.platform || "telegram",
-    lastMessage: "Deschide conversația pentru a vedea mesajele",
-    time: new Date(raw.created_at).toLocaleTimeString("ro-RO", {
+    lastMessage: raw.last_message_text ?? "Deschide conversația pentru a vedea mesajele",
+    time: new Date(lastMessageTimestamp).toLocaleTimeString("ro-RO", {
       hour: "2-digit",
       minute: "2-digit",
     }),
-    unread: 0,
+    unread: raw.unread_count ?? 0,
     sentiment: "neutral",
     category: "suport",
     entities: [],

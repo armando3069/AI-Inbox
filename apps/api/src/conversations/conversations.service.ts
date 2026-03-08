@@ -9,7 +9,7 @@ export class ConversationsService {
 
   async getContacts(
     userId: number,
-    filters: { platform?: string; lifecycle?: string; search?: string },
+    filters: { platform?: string; lifecycle?: string; search?: string; filter?: string },
   ) {
     const where: Prisma.conversationsWhereInput = {
       platform_account: { user_id: userId },
@@ -17,6 +17,7 @@ export class ConversationsService {
 
     if (filters.platform) where.platform = filters.platform;
     if (filters.lifecycle) where.lifecycle_status = filters.lifecycle;
+    if (filters.filter === 'unread') where.unread_count = { gt: 0 };
     if (filters.search) {
       where.OR = [
         { contact_name: { contains: filters.search, mode: 'insensitive' } },
@@ -27,8 +28,16 @@ export class ConversationsService {
 
     return this.prisma.conversations.findMany({
       where,
-      orderBy: { created_at: 'desc' },
+      orderBy: { last_message_at: { sort: 'desc', nulls: 'last' } },
       take: 500,
+    });
+  }
+
+  async markAsRead(id: number, userId: number) {
+    await this.getConversationForUser(id, userId);
+    return this.prisma.conversations.update({
+      where: { id },
+      data: { unread_count: 0 },
     });
   }
 

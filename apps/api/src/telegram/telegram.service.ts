@@ -14,6 +14,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ChatGateway } from '../chat/chat.gateway';
 import { AiAssistantService } from '../ai-assistant/ai-assistant.service';
 import { TELEGRAM_API_BASE } from '../common/constants';
+import { updateConversationLastMessage } from '../common/conversation.helper';
 import { ConnectBotDto } from './dto/connect-bot.dto';
 import { ReplyDto } from '../common/dto/reply.dto';
 import type { Prisma, conversations, messages, platform_accounts } from '@prisma/client';
@@ -279,6 +280,8 @@ export class TelegramService {
       },
     });
 
+    await updateConversationLastMessage(this.prisma, message);
+
     // Push to the owning user's WebSocket room
     this.chatGateway.emitNewMessage(userId, message);
 
@@ -356,6 +359,8 @@ export class TelegramService {
       },
     });
 
+    await updateConversationLastMessage(this.prisma, message);
+
     // 5. Broadcast to the owning user's WebSocket room
     const userId = platformAccount.user_id;
     this.chatGateway.emitNewMessage(userId, message);
@@ -414,6 +419,8 @@ export class TelegramService {
         timestamp: new Date(),
       },
     });
+
+    await updateConversationLastMessage(this.prisma, message);
 
     this.chatGateway.emitNewMessage(userId, message);
     this.logger.log(`[TG AUTO-REPLY] sent to conversation ${conversation.id}`);

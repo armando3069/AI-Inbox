@@ -9,6 +9,9 @@ class ConversationsService {
     patch: ContactInfoPatch,
   ): Promise<ConversationContactInfo> =>
     request.patch<ConversationContactInfo>(ROUTES.conversations.contactInfo(id), patch);
+
+  markAsRead = (id: number): Promise<void> =>
+    request.patch<void>(ROUTES.conversations.markAsRead(id));
 }
 
 export const conversationsService = new ConversationsService();

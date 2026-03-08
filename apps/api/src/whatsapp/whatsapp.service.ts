@@ -11,6 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ChatGateway } from '../chat/chat.gateway';
 import { AiAssistantService } from '../ai-assistant/ai-assistant.service';
 import { ConnectWhatsappDto } from './dto/connect-whatsapp.dto';
+import { updateConversationLastMessage } from '../common/conversation.helper';
 import { ReplyDto } from '../common/dto/reply.dto';
 import type { conversations, messages, platform_accounts } from '@prisma/client';
 
@@ -154,6 +155,7 @@ export class WhatsappService {
           timestamp: new Date(),
         },
       });
+      await updateConversationLastMessage(this.prisma, msg);
       this.chatGateway.emitNewMessage(userId, msg);
     }
   }
@@ -189,6 +191,8 @@ export class WhatsappService {
         timestamp: new Date(),
       },
     });
+
+    await updateConversationLastMessage(this.prisma, msg);
 
     this.chatGateway.emitNewMessage(userId, msg);
     return msg;
@@ -290,6 +294,8 @@ export class WhatsappService {
       },
     });
 
+    await updateConversationLastMessage(this.prisma, message);
+
     this.chatGateway.emitNewMessage(userId, message);
     if (isNew) this.chatGateway.emitNewConversation(userId, conversation);
 
@@ -344,6 +350,8 @@ export class WhatsappService {
         timestamp: new Date(),
       },
     });
+
+    await updateConversationLastMessage(this.prisma, message);
 
     this.chatGateway.emitNewMessage(userId, message);
     this.logger.log(`[WA AUTO-REPLY] sent to conversation ${conversation.id}`);
