@@ -27,8 +27,18 @@ export class ConversationsController {
     @Query('platform') platform?: string,
     @Query('lifecycle') lifecycle?: string,
     @Query('search') search?: string,
+    @Query('filter') filter?: string,
   ) {
-    return this.conversationsService.getContacts(req.user.id, { platform, lifecycle, search });
+    return this.conversationsService.getContacts(req.user.id, { platform, lifecycle, search, filter });
+  }
+
+  @Patch(':id/read')
+  @HttpCode(HttpStatus.OK)
+  markAsRead(
+    @Request() req: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.conversationsService.markAsRead(id, req.user.id);
   }
 
   @Patch(':id/contact-info')
