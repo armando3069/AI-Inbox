@@ -128,7 +128,7 @@ export class ChatGateway
         where: {
           platform_account: { user_id: userId },
         },
-        orderBy: { id: 'desc' },
+        orderBy: { last_message_at: { sort: 'desc', nulls: 'last' } },
       });
       client.emit('conversations', conversations);
     } catch (err) {
