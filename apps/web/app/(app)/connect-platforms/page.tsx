@@ -2,12 +2,25 @@
 
 import { type FormEvent, useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, CheckCircle2, Cable, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Copy, Check } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getToken } from "@/services/auth/auth-service";
 import { platformsService } from "@/services/platforms/platforms.service";
 import type { PlatformAccount } from "@/services/platforms/platforms.types";
-import { PageHeader } from "@/components/layout/PageHeader";
+
+// ── Style tokens (matching AI Assistant / Contacts) ─────────────────────────
+
+const CARD =
+  "rounded-2xl border border-[#E7E3DC] bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)]";
+const ICON_BOX =
+  "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F3F4F6]";
+const INPUT =
+  "w-full rounded-xl border border-[#E5E7EB] bg-[#FAFAFA] px-4 py-2.5 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 focus:border-[var(--text-tertiary)] focus:bg-white transition-all duration-150 ease-out";
+const LABEL = "block text-[13px] font-medium text-[var(--text-secondary)]";
+const PRIMARY_BTN =
+  "w-full inline-flex items-center justify-center gap-2 rounded-[var(--radius-button)] bg-[var(--accent-primary)] py-2.5 text-[13px] font-medium text-white hover:bg-[#1F2937] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 transition-all duration-150 ease-out shadow-[var(--shadow-xs)]";
+const SECTION_LABEL =
+  "text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]";
 
 // ── Platform config ─────────────────────────────────────────────────────────
 
@@ -20,7 +33,6 @@ interface PlatformConfig {
   icon: React.ReactNode;
   status: PlatformStatus;
   accentColor: string;
-  bgColor: string;
 }
 
 const PLATFORMS: PlatformConfig[] = [
@@ -31,7 +43,6 @@ const PLATFORMS: PlatformConfig[] = [
     icon: <TelegramIcon />,
     status: "available",
     accentColor: "text-sky-500",
-    bgColor: "bg-sky-50",
   },
   {
     id: "whatsapp",
@@ -40,7 +51,6 @@ const PLATFORMS: PlatformConfig[] = [
     icon: <WhatsAppIcon />,
     status: "available",
     accentColor: "text-green-500",
-    bgColor: "bg-green-50",
   },
   {
     id: "teams",
@@ -49,7 +59,6 @@ const PLATFORMS: PlatformConfig[] = [
     icon: <TeamsIcon />,
     status: "coming-soon",
     accentColor: "text-indigo-500",
-    bgColor: "bg-indigo-50",
   },
 ];
 
@@ -157,6 +166,10 @@ function ConnectPlatformsContent() {
     }
   };
 
+  // ── Derived ───────────────────────────────────────────────────────────────
+
+  const currentStep = selectedId ? 2 : 1;
+
   if (isAuthLoading || isCheckingPlatforms) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -166,45 +179,93 @@ function ConnectPlatformsContent() {
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[var(--bg-page)]">
+    <div className="flex-1 flex flex-col overflow-hidden rounded-xl bg-white shadow-[var(--shadow-card)] border border-[var(--border-default)]">
+      {/* ── Toast notification ── */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 flex items-center gap-2 rounded-[var(--radius-button)] bg-emerald-600 px-4 py-3 text-[13px] font-medium text-white shadow-[var(--shadow-dropdown)]">
+        <div className="fixed top-4 right-4 z-50 flex items-center gap-2.5 rounded-xl bg-[#047857] px-4 py-3 text-[13px] font-medium text-white shadow-[var(--shadow-dropdown)] animate-in fade-in slide-in-from-top-2">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           {toast}
         </div>
       )}
 
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-6 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <PageHeader
-              icon={Cable}
-              title={isManaging ? "Gestionează platformele" : "Conectează-ți prima platformă"}
-              description={
-                isManaging
-                  ? "Adaugă sau gestionează canalele de comunicare conectate."
-                  : "Alege canalul de comunicare pe care vrei să-l gestionezi."
-              }
-            />
+        <div className="max-w-[960px] mx-auto px-6 py-8">
+
+          {/* ── Header ──────────────────────────────────────────────── */}
+          <div className="mb-6">
+            <h1 className="text-[20px] font-semibold text-[var(--text-primary)] tracking-tight leading-none">
+              {isManaging ? "Gestionează platformele" : "Conectează-ți prima platformă"}
+            </h1>
+            <p className="text-[13px] text-[var(--text-tertiary)] mt-1 leading-relaxed">
+              {isManaging
+                ? "Adaugă sau gestionează canalele de comunicare conectate."
+                : "Alege canalul de comunicare pe care vrei să-l gestionezi."}
+            </p>
           </div>
 
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-            {/* ── Platform cards ── */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:flex-1">
-              {PLATFORMS.map((platform) => (
-                <PlatformCard
-                  key={platform.id}
-                  platform={platform}
-                  isSelected={selectedId === platform.id}
-                  isConnected={connectedIds.has(platform.id)}
-                  onClick={() => handleCardClick(platform)}
-                />
-              ))}
+          {/* ── Step flow indicator ──────────────────────────────────── */}
+          <div className="mb-8 flex items-center gap-0">
+            {/* Step 1 */}
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-all duration-150 ${
+                currentStep > 1
+                  ? "bg-[#ECFDF5] text-[#047857]"
+                  : currentStep === 1
+                  ? "bg-[var(--accent-primary)] text-white"
+                  : "bg-[#F3F4F6] text-[var(--text-tertiary)]"
+              }`}
+            >
+              {currentStep > 1 ? <Check className="h-3 w-3" /> : "1 "}
+              Alege platforma
+            </span>
+
+            <div className="mx-2 h-px w-6 bg-[var(--border-default)]" />
+
+            {/* Step 2 */}
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-all duration-150 ${
+                currentStep === 2
+                  ? "bg-[var(--accent-primary)] text-white"
+                  : "bg-[#F3F4F6] text-[var(--text-tertiary)]"
+              }`}
+            >
+              2
+              Conectează
+            </span>
+
+            <div className="mx-2 h-px w-6 bg-[var(--border-default)]" />
+
+            {/* Step 3 */}
+            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium bg-[#F3F4F6] text-[var(--text-tertiary)]">
+              3
+              Configurează
+            </span>
+          </div>
+
+          {/* ── Main layout ─────────────────────────────────────────── */}
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+
+            {/* ── Left: Platform cards ── */}
+            <div className="lg:flex-1 space-y-4">
+              <p className={SECTION_LABEL}>Platforme disponibile</p>
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {PLATFORMS.map((platform) => (
+                  <PlatformCard
+                    key={platform.id}
+                    platform={platform}
+                    isSelected={selectedId === platform.id}
+                    isConnected={connectedIds.has(platform.id)}
+                    onClick={() => handleCardClick(platform)}
+                  />
+                ))}
+              </div>
             </div>
 
-            {/* ── Connect form ── */}
-            <div className="w-full lg:w-96 lg:shrink-0">
+            {/* ── Right: Connect form ── */}
+            <div className="w-full lg:w-[400px] lg:shrink-0 space-y-4">
+              <p className={SECTION_LABEL}>Configurare integrare</p>
+
               {selectedId === "telegram" && (
                 <TelegramForm
                   botToken={tgBotToken}
@@ -228,12 +289,20 @@ function ConnectPlatformsContent() {
               )}
 
               {!selectedId && (
-                <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[var(--radius-card)] border border-dashed border-[var(--border-default)] bg-white/60 p-8 text-center">
-                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-[var(--radius-button)] bg-[var(--bg-surface-hover)]">
-                    <Cable className="h-5 w-5 text-[var(--text-tertiary)]" />
+                <div className="flex min-h-[240px] flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--border-default)] bg-[var(--bg-surface-hover)]/40 p-8 text-center">
+                  <div className={ICON_BOX.replace("h-9 w-9", "h-11 w-11")}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-[var(--text-tertiary)]">
+                      <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
+                      <path d="M18 14h-8" />
+                      <path d="M15 18h-5" />
+                      <path d="M10 6h8v4h-8V6Z" />
+                    </svg>
                   </div>
-                  <p className="text-[13px] text-[var(--text-tertiary)]">
-                    Selectează o platformă neconectată pentru a o adăuga.
+                  <p className="mt-3 text-[13px] font-medium text-[var(--text-secondary)]">
+                    Nicio platformă selectată
+                  </p>
+                  <p className="mt-1 text-[12px] text-[var(--text-tertiary)]">
+                    Alege o platformă din stânga pentru a o conecta.
                   </p>
                 </div>
               )}
@@ -282,35 +351,57 @@ function PlatformCard({
       onClick={onClick}
       disabled={!clickable}
       className={[
-        "relative w-full rounded-[var(--radius-card)] border p-5 text-left transition-all duration-150",
-        clickable ? "cursor-pointer hover:border-[var(--border-default)] hover:shadow-[var(--shadow-sm)]" : "cursor-not-allowed",
-        isConnected ? "opacity-70 border-[var(--border-default)] bg-white" : "",
-        platform.status === "coming-soon" && !isConnected ? "opacity-60 border-[var(--border-default)] bg-white" : "",
-        !isConnected && platform.status === "available" && !isSelected
-          ? "border-[var(--border-default)] bg-white"
+        "relative w-full rounded-2xl border p-6 text-left transition-all duration-150 ease-out",
+        // Base
+        "bg-white",
+        // Clickable hover
+        clickable && !isSelected
+          ? "cursor-pointer border-[#E7E3DC] shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:bg-[var(--bg-surface-hover)] hover:shadow-[var(--shadow-sm)]"
           : "",
-        isSelected ? "border-[var(--accent-primary)] ring-1 ring-[var(--accent-primary)] bg-white shadow-[var(--shadow-card)]" : "",
+        // Selected state
+        isSelected
+          ? "border-[var(--accent-primary)]/20 bg-[#F9FAFB] shadow-[var(--shadow-sm)] ring-1 ring-[var(--accent-primary)]/10"
+          : "",
+        // Connected
+        isConnected
+          ? "cursor-default border-[#E7E3DC] opacity-75 shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
+          : "",
+        // Coming soon
+        platform.status === "coming-soon" && !isConnected
+          ? "cursor-not-allowed border-[#E7E3DC] opacity-50 shadow-none"
+          : "",
+        // Default unselected available
+        !isSelected && !isConnected && platform.status === "available"
+          ? "border-[#E7E3DC] shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
+          : "",
       ]
         .filter(Boolean)
         .join(" ")}
     >
+      {/* Status badge */}
       {isConnected ? (
-        <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+        <span className="absolute right-4 top-4 inline-flex items-center gap-1 rounded-full bg-[#ECFDF5] border border-[#D1FAE5] px-2 py-0.5 text-[11px] font-medium text-[#047857]">
           <CheckCircle2 className="h-3 w-3" />
           Conectat
         </span>
       ) : platform.status === "coming-soon" ? (
-        <span className="absolute right-3 top-3 rounded-full bg-[var(--bg-surface-hover)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-tertiary)]">
+        <span className="absolute right-4 top-4 rounded-full bg-[#F3F4F6] border border-transparent px-2 py-0.5 text-[11px] font-medium text-[var(--text-tertiary)]">
           În curând
         </span>
       ) : null}
 
-      <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-[var(--radius-button)] ${platform.bgColor}`}>
+      {/* Icon */}
+      <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-[#F3F4F6]`}>
         <span className={platform.accentColor}>{platform.icon}</span>
       </div>
 
-      <p className="font-medium text-[var(--text-primary)]">{platform.label}</p>
-      <p className="mt-1 text-[13px] text-[var(--text-tertiary)]">{platform.description}</p>
+      {/* Content */}
+      <p className="text-[14px] font-semibold text-[var(--text-primary)] leading-tight">
+        {platform.label}
+      </p>
+      <p className="mt-1.5 text-[13px] text-[var(--text-tertiary)] leading-relaxed">
+        {platform.description}
+      </p>
     </button>
   );
 }
@@ -318,7 +409,11 @@ function PlatformCard({
 // ── Telegram connect form ─────────────────────────────────────────────────────
 
 function TelegramForm({
-  botToken, onBotTokenChange, isConnecting, error, onSubmit,
+  botToken,
+  onBotTokenChange,
+  isConnecting,
+  error,
+  onSubmit,
 }: {
   botToken: string;
   onBotTokenChange: (v: string) => void;
@@ -327,20 +422,26 @@ function TelegramForm({
   onSubmit: (e: FormEvent) => void;
 }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-[var(--border-default)] bg-white p-6 shadow-[var(--shadow-card)]">
-      <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-button)] bg-sky-50">
+    <div className={CARD}>
+      {/* Header */}
+      <div className="flex items-start gap-3.5 mb-6">
+        <div className={ICON_BOX}>
           <span className="text-sky-500"><TelegramIcon /></span>
         </div>
         <div>
-          <h2 className="text-[15px] font-medium text-[var(--text-primary)]">Conectează Telegram</h2>
-          <p className="text-[12px] text-[var(--text-tertiary)]">Introdu token-ul botului tău</p>
+          <h2 className="text-[14px] font-semibold text-[var(--text-primary)] leading-tight">
+            Conectează Telegram
+          </h2>
+          <p className="mt-1 text-[13px] text-[var(--text-tertiary)] leading-relaxed">
+            Introdu token-ul botului tău Telegram
+          </p>
         </div>
       </div>
 
+      {/* Form */}
       <form onSubmit={onSubmit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label htmlFor="tg-bot-token" className="block text-[13px] font-medium text-[var(--text-secondary)]">
+        <div className="space-y-2">
+          <label htmlFor="tg-bot-token" className={LABEL}>
             Bot Token
           </label>
           <input
@@ -351,17 +452,20 @@ function TelegramForm({
             placeholder="1234567890:ABCDefgh..."
             required
             autoFocus
-            className="w-full rounded-[var(--radius-input)] border border-[var(--border-default)] px-3 py-2.5 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/10 focus:border-[var(--accent-primary)]/30"
+            className={INPUT}
           />
-          <p className="text-[12px] text-[var(--text-tertiary)]">
+          <p className="text-[12px] text-[var(--text-tertiary)] leading-relaxed">
             Obține token-ul de la{" "}
             <span className="font-medium text-[var(--text-secondary)]">@BotFather</span> cu comanda{" "}
-            <code className="rounded bg-[var(--bg-surface-hover)] px-1 py-0.5">&#47;newbot</code>.
+            <code className="rounded-md bg-[#F3F4F6] px-1.5 py-0.5 text-[11px] font-mono text-[var(--text-secondary)]">
+              /newbot
+            </code>
+            .
           </p>
         </div>
 
         {error && (
-          <div className="flex items-start gap-2 rounded-[var(--radius-badge)] border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-700">
+          <div className="flex items-start gap-2.5 rounded-xl border border-red-200/60 bg-red-50/50 px-4 py-3 text-[13px] text-red-600">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             {error}
           </div>
@@ -370,8 +474,11 @@ function TelegramForm({
         <button
           type="submit"
           disabled={isConnecting || !botToken.trim()}
-          className="w-full rounded-[var(--radius-button)] bg-[var(--accent-primary)] py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-[#222] disabled:opacity-60"
+          className={PRIMARY_BTN}
         >
+          {isConnecting ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : null}
           {isConnecting ? "Se conectează…" : "Conectează Telegram"}
         </button>
       </form>
@@ -395,16 +502,28 @@ function CopyField({ label, value }: { label: string; value: string }) {
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <p className="text-[12px] font-medium text-[var(--text-tertiary)]">{label}</p>
-      <div className="flex items-center gap-2 rounded-[var(--radius-badge)] border border-[var(--border-default)] bg-[var(--bg-surface-hover)] px-3 py-2">
-        <code className="flex-1 truncate text-[12px] text-[var(--text-secondary)]">{value}</code>
+      <div className="flex items-center gap-2 rounded-lg border border-[var(--border-default)] bg-white px-3 py-2">
+        <code className="flex-1 truncate text-[12px] font-mono text-[var(--text-secondary)]">
+          {value}
+        </code>
         <button
           type="button"
           onClick={copy}
-          className="shrink-0 text-[12px] font-medium text-emerald-600 hover:text-emerald-700"
+          className="shrink-0 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[#F3F4F6] transition-all duration-150 ease-out"
         >
-          {copied ? "Copiat!" : "Copiază"}
+          {copied ? (
+            <>
+              <Check className="h-3 w-3 text-[#047857]" />
+              <span className="text-[#047857]">Copiat</span>
+            </>
+          ) : (
+            <>
+              <Copy className="h-3 w-3" />
+              Copiază
+            </>
+          )}
         </button>
       </div>
     </div>
@@ -429,80 +548,97 @@ function WhatsappForm({
   onSubmit: (e: FormEvent) => void;
 }) {
   return (
-    <div className="rounded-[var(--radius-card)] border border-[var(--border-default)] bg-white p-6 shadow-[var(--shadow-card)] space-y-5">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-button)] bg-green-50">
-          <span className="text-green-500"><WhatsAppIcon /></span>
+    <div className="space-y-4">
+      {/* ── Connection card ── */}
+      <div className={CARD}>
+        {/* Header */}
+        <div className="flex items-start gap-3.5 mb-6">
+          <div className={ICON_BOX}>
+            <span className="text-green-500"><WhatsAppIcon /></span>
+          </div>
+          <div>
+            <h2 className="text-[14px] font-semibold text-[var(--text-primary)] leading-tight">
+              Conectează WhatsApp
+            </h2>
+            <p className="mt-1 text-[13px] text-[var(--text-tertiary)] leading-relaxed">
+              WhatsApp Business Cloud API
+            </p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-[15px] font-medium text-[var(--text-primary)]">Conectează WhatsApp</h2>
-          <p className="text-[12px] text-[var(--text-tertiary)]">WhatsApp Business Cloud API</p>
-        </div>
+
+        {/* Credentials form */}
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="wa-token" className={LABEL}>
+              Access Token
+            </label>
+            <input
+              id="wa-token"
+              type="password"
+              value={accessToken}
+              onChange={(e) => onAccessTokenChange(e.target.value)}
+              placeholder="EAAUlx…"
+              required
+              autoFocus
+              className={INPUT}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="wa-phone-id" className={LABEL}>
+              Phone Number ID
+            </label>
+            <input
+              id="wa-phone-id"
+              type="text"
+              value={phoneNumberId}
+              onChange={(e) => onPhoneNumberIdChange(e.target.value)}
+              placeholder="102391771747…"
+              required
+              className={INPUT}
+            />
+          </div>
+
+          {error && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-red-200/60 bg-red-50/50 px-4 py-3 text-[13px] text-red-600">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isConnecting || !accessToken.trim() || !phoneNumberId.trim()}
+            className={PRIMARY_BTN}
+          >
+            {isConnecting ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : null}
+            {isConnecting ? "Se conectează…" : "Conectează WhatsApp"}
+          </button>
+        </form>
       </div>
 
-      {/* Credentials form */}
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label htmlFor="wa-token" className="block text-[13px] font-medium text-[var(--text-secondary)]">
-            Access Token
-          </label>
-          <input
-            id="wa-token"
-            type="password"
-            value={accessToken}
-            onChange={(e) => onAccessTokenChange(e.target.value)}
-            placeholder="EAAUlx…"
-            required
-            autoFocus
-            className="w-full rounded-[var(--radius-input)] border border-[var(--border-default)] px-3 py-2.5 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/10 focus:border-[var(--accent-primary)]/30"
-          />
+      {/* ── Webhook configuration card ── */}
+      <div className={CARD}>
+        <p className={`${SECTION_LABEL} mb-4`}>Configurare Webhook</p>
+
+        <div className="space-y-3">
+          <CopyField label="Callback URL" value={WHATSAPP_WEBHOOK_URL} />
+          <CopyField label="Verify Token" value={WHATSAPP_VERIFY_TOKEN} />
         </div>
 
-        <div className="space-y-1.5">
-          <label htmlFor="wa-phone-id" className="block text-[13px] font-medium text-[var(--text-secondary)]">
-            Phone Number ID
-          </label>
-          <input
-            id="wa-phone-id"
-            type="text"
-            value={phoneNumberId}
-            onChange={(e) => onPhoneNumberIdChange(e.target.value)}
-            placeholder="102391771747…"
-            required
-            className="w-full rounded-[var(--radius-input)] border border-[var(--border-default)] px-3 py-2.5 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/10 focus:border-[var(--accent-primary)]/30"
-          />
+        <div className="mt-4 rounded-lg bg-[#F3F4F6] px-3.5 py-3">
+          <p className="text-[12px] text-[var(--text-tertiary)] leading-relaxed">
+            Meta Developer Portal → WhatsApp → Configuration → Webhook →{" "}
+            <span className="font-medium text-[var(--text-secondary)]">Edit</span> → lipește datele de mai sus, apasă{" "}
+            <span className="font-medium text-[var(--text-secondary)]">Verify and Save</span>, apoi abonează-te la{" "}
+            <code className="rounded-md bg-white px-1.5 py-0.5 text-[11px] font-mono text-[var(--text-secondary)] border border-[var(--border-default)]">
+              messages
+            </code>
+            .
+          </p>
         </div>
-
-        {error && (
-          <div className="flex items-start gap-2 rounded-[var(--radius-badge)] border border-red-200 bg-red-50 px-3 py-2.5 text-[13px] text-red-700">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            {error}
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={isConnecting || !accessToken.trim() || !phoneNumberId.trim()}
-          className="w-full rounded-[var(--radius-button)] bg-[var(--accent-primary)] py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-[#222] disabled:opacity-60"
-        >
-          {isConnecting ? "Se conectează…" : "Conectează WhatsApp"}
-        </button>
-      </form>
-
-      {/* Webhook instructions */}
-      <div className="rounded-[var(--radius-button)] border border-[var(--border-default)] bg-[var(--bg-surface-hover)] p-4 space-y-3">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--text-tertiary)]">
-          Configurare Webhook în Meta
-        </p>
-        <CopyField label="Callback URL" value={WHATSAPP_WEBHOOK_URL} />
-        <CopyField label="Verify Token" value={WHATSAPP_VERIFY_TOKEN} />
-        <p className="text-[12px] text-[var(--text-tertiary)]">
-          Meta Developer Portal → WhatsApp → Configuration → Webhook →{" "}
-          <span className="font-medium text-[var(--text-secondary)]">Edit</span> → lipește datele de mai sus, apasă{" "}
-          <span className="font-medium text-[var(--text-secondary)]">Verify and Save</span>, apoi abonează-te la{" "}
-          <code className="rounded bg-[var(--border-subtle)] px-1">messages</code>.
-        </p>
       </div>
     </div>
   );
