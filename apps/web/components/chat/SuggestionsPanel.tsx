@@ -8,7 +8,7 @@ interface SuggestionsPanelProps {
 
 export function SuggestionsPanel({ suggestions, isLoading, onSelect }: SuggestionsPanelProps) {
   return (
-    <div className="mb-3 p-3 bg-[var(--bg-surface)] rounded-[var(--radius-button)] border border-[var(--border-default)]">
+    <div className="mb-3 p-3 bg-[var(--bg-surface-hover)] rounded-xl border border-[var(--border-default)]">
       <div className="flex items-center gap-2 mb-2">
         <Zap className="w-3.5 h-3.5 text-[var(--text-secondary)]" />
         <span className="text-[12px] font-medium text-[var(--text-primary)]">Răspunsuri Sugerate</span>
@@ -21,14 +21,14 @@ export function SuggestionsPanel({ suggestions, isLoading, onSelect }: Suggestio
           ? [0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-9 bg-[var(--bg-surface-hover)] rounded-[var(--radius-badge)] animate-pulse"
+                className="h-9 bg-white/60 rounded-lg animate-pulse"
               />
             ))
           : suggestions.map((suggestion, idx) => (
               <button
                 key={idx}
                 onClick={() => onSelect(suggestion)}
-                className="text-left p-2 bg-[var(--bg-surface-hover)] hover:bg-[var(--border-subtle)] rounded-[var(--radius-badge)] text-[12px] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:border-[var(--border-default)] transition-colors"
+                className="text-left p-2 bg-white hover:bg-white/80 rounded-lg text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)] hover:border-[var(--border-default)] transition-all duration-120 ease-out leading-relaxed"
               >
                 {suggestion}
               </button>

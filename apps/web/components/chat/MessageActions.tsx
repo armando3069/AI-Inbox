@@ -49,14 +49,14 @@ export function MessageActions({ text, isTranslating, onTranslate }: MessageActi
   return (
     // Absolute bar: sits just above the message bubble (bottom-full + mb-1).
     // It stays visible as long as the parent `group` is hovered.
-    <div className="absolute right-0 bottom-full mb-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+    <div className="absolute right-0 bottom-full mb-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-120 ease-out">
       {/* Action chips */}
-      <div className="flex items-center gap-0.5 bg-white border border-[var(--border-default)] rounded-[var(--radius-badge)] shadow-[var(--shadow-sm)] p-0.5">
+      <div className="flex items-center gap-0.5 bg-white border border-[var(--border-default)] rounded-lg shadow-[var(--shadow-sm)] p-0.5">
         {/* Copy */}
         <button
           onClick={handleCopy}
           title="Copiază"
-          className="p-1.5 rounded-md hover:bg-[var(--bg-surface-hover)] transition-colors text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+          className="p-1.5 rounded-md hover:bg-[var(--bg-surface-hover)] transition-all duration-120 ease-out text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
         >
           {isCopied
             ? <Check className="w-3.5 h-3.5 text-emerald-500" />
@@ -68,7 +68,7 @@ export function MessageActions({ text, isTranslating, onTranslate }: MessageActi
           ref={translateBtnRef}
           onClick={() => setIsTranslateOpen((p) => !p)}
           title="Traduce"
-          className={`p-1.5 rounded-md transition-colors ${
+          className={`p-1.5 rounded-md transition-all duration-120 ease-out ${
             isTranslateOpen || isTranslating
               ? "bg-[var(--bg-surface-hover)] text-[var(--text-primary)]"
               : "hover:bg-[var(--bg-surface-hover)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"

@@ -86,7 +86,7 @@ export function MessageInput({
   };
 
   return (
-    <div ref={wrapperRef} className="px-5 py-6 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] ">
+    <div ref={wrapperRef} className="px-5 py-4 border-t border-[var(--border-default)] bg-white">
       {/* Suggestions panel — smooth collapse/expand */}
       <div
         className={`overflow-hidden transition-all duration-200 ease-in-out ${
@@ -103,37 +103,43 @@ export function MessageInput({
         />
       </div>
 
-      <div className="flex items-end gap-2.5 ">
-        <button className="p-2 hover:bg-[var(--bg-surface-hover)] rounded-[var(--radius-badge)] transition-colors">
-          <Paperclip className="w-4.5 h-4.5 text-[var(--text-tertiary)]" />
+      <div className="flex items-end gap-2">
+        <button className="p-2 rounded-lg hover:bg-[var(--bg-surface-hover)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-all duration-120 ease-out flex-shrink-0">
+          <Paperclip className="w-[18px] h-[18px]" />
         </button>
 
         {/* Textarea + emoji button share a relative container */}
-        <div className="flex-1 relative ">
+        <div className="flex-1 relative">
           <textarea
             ref={textareaRef}
             value={value}
             onChange={(e) => onValueChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                onSend();
+              }
+            }}
             placeholder="Scrie un mesaj..."
-            className="w-full p-3 pr-10 border border-[var(--border-default)] rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/10 focus:border-[var(--accent-primary)]/30 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] text-[14px]"
+            className="w-full min-h-[44px] p-3 pr-10 border border-[var(--border-default)] rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 focus:border-[var(--text-tertiary)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] text-[14px] leading-relaxed transition-all duration-120 ease-out"
             rows={2}
           />
 
           {/* Emoji toggle button */}
           <button
-            className={`absolute right-3 bottom-3 p-1 rounded-[var(--radius-badge)] transition-colors ${
-              isEmojiOpen ? "bg-[var(--bg-surface-hover)] text-[var(--text-primary)]" : "hover:bg-[var(--bg-surface-hover)] text-[var(--text-tertiary)]"
+            className={`absolute right-3 bottom-3 p-1 rounded-lg transition-all duration-120 ease-out ${
+              isEmojiOpen ? "bg-[var(--bg-surface-hover)] text-[var(--text-primary)]" : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)]"
             }`}
             onClick={() => setIsEmojiOpen((prev) => !prev)}
           >
-            <Smile className="w-4.5 h-4.5" />
+            <Smile className="w-[18px] h-[18px]" />
           </button>
 
           {/* Emoji picker popover — appears above the composer, right-aligned */}
           {isEmojiOpen && (
             <div
               ref={emojiPickerRef}
-              className="absolute bottom-full right-0 mb-2 z-50 shadow-[var(--shadow-dropdown)] rounded-[var(--radius-button)] overflow-hidden"
+              className="absolute bottom-full right-0 mb-2 z-50 shadow-[var(--shadow-dropdown)] rounded-xl overflow-hidden"
             >
               <Picker
                 data={async () => {
@@ -150,30 +156,30 @@ export function MessageInput({
         </div>
 
         <button
-          className="p-3 bg-[var(--accent-primary)] hover:bg-[#222] text-white rounded-[var(--radius-button)] transition-colors"
+          className="p-2.5 bg-[var(--accent-primary)] hover:bg-[#1F2937] text-white rounded-xl transition-all duration-120 ease-out active:scale-[0.96] shadow-[var(--shadow-xs)] flex-shrink-0"
           onClick={onSend}
         >
-          <Send className="w-4.5 h-4.5" />
+          <Send className="w-[18px] h-[18px]" />
         </button>
       </div>
 
-      <div className="flex items-center justify-between mt-2 px-1">
-        <div className="flex items-center gap-3 text-[11px] text-[var(--text-tertiary)]">
+      <div className="flex items-center justify-between mt-2.5 px-0.5">
+        <div className="flex items-center gap-2 text-[11px] text-[var(--text-tertiary)]">
 
           {/* "Sugestii AI" toggle button — active state shows dark chip */}
           <button
             onClick={onToggleSuggestions}
-            className={`flex items-center gap-1 transition-colors rounded-md px-1.5 py-0.5 ${
+            className={`flex items-center gap-1 transition-all duration-120 ease-out rounded-md px-2 py-1 ${
               isSuggestionsOpen
                 ? "text-[var(--text-primary)] bg-[var(--bg-surface-hover)] font-medium"
-                : "hover:text-[var(--text-primary)]"
+                : "hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)]"
             }`}
           >
             <Zap className={`w-3 h-3 ${isSuggestionsOpen ? "fill-[var(--text-primary)]" : ""}`} />
             Sugestii AI
           </button>
 
-          <button className="hover:text-[var(--text-primary)] transition-colors flex items-center gap-1">
+          <button className="flex items-center gap-1 transition-all duration-120 ease-out rounded-md px-2 py-1 hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)]">
             <Tag className="w-3 h-3" />
             Auto-clasificare
           </button>

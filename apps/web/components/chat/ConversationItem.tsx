@@ -14,13 +14,18 @@ export function ConversationItem({ conversation: conv, isSelected, onSelect }: C
   return (
     <div
       onClick={() => onSelect(conv)}
-      className={`relative px-5 py-3.5 cursor-pointer transition-colors hover:bg-[var(--bg-surface-hover)] border-b border-[var(--border-subtle)] ${
-        isSelected ? "bg-[var(--bg-surface-hover)]" : ""
-      }`}
+      className={`
+        relative px-4 py-3 cursor-pointer transition-all duration-120 ease-out
+        border-b border-[var(--border-subtle)]
+        ${isSelected
+          ? "bg-[var(--bg-surface-hover)]"
+          : "hover:bg-[var(--bg-surface-hover)]/60"
+        }
+      `}
     >
-      {/* Active indicator */}
+      {/* Active indicator — left accent bar */}
       {isSelected && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-8 rounded-r-full bg-[var(--accent-primary)]" />
+        <div className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-[var(--accent-primary)]" />
       )}
 
       <div className="flex gap-3">
@@ -32,35 +37,35 @@ export function ConversationItem({ conversation: conv, isSelected, onSelect }: C
         />
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between mb-0.5">
+          <div className="flex items-center justify-between mb-0.5">
             <h3 className={`text-[13px] truncate ${conv.unread > 0 ? "font-semibold text-[var(--text-primary)]" : "font-medium text-[var(--text-primary)]"}`}>
               {conv.contact}
             </h3>
-            <span className={`text-[11px] ml-2 flex-shrink-0 ${conv.unread > 0 ? "font-medium text-[var(--text-secondary)]" : "text-[var(--text-tertiary)]"}`}>
+            <span className={`text-[11px] ml-2 flex-shrink-0 tabular-nums ${conv.unread > 0 ? "font-medium text-[var(--text-secondary)]" : "text-[var(--text-tertiary)]"}`}>
               {conv.time}
             </span>
           </div>
 
-          <p className={`text-[12px] line-clamp-1 mb-2 ${conv.unread > 0 ? "text-[var(--text-primary)] font-medium" : "text-[var(--text-secondary)]"}`}>
+          <p className={`text-[12px] line-clamp-1 mb-1.5 leading-relaxed ${conv.unread > 0 ? "text-[var(--text-primary)] font-medium" : "text-[var(--text-secondary)]"}`}>
             {conv.lastMessage}
           </p>
 
           <div className="flex items-center gap-1.5 flex-wrap">
             <span
-              className={`text-[11px] px-2 py-0.5 rounded-md border ${getSentimentColor(conv.sentiment)}`}
+              className={`text-[10px] px-1.5 py-0.5 rounded-[var(--radius-badge)] border leading-none ${getSentimentColor(conv.sentiment)}`}
             >
               {getSentimentLabel(conv.sentiment)}
             </span>
             {(() => {
               const stage = getLifecycleStage(conv.lifecycleStatus);
               return (
-                <span className={`text-[11px] px-2 py-0.5 rounded-md border ${stage.badgeClass}`}>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-[var(--radius-badge)] border leading-none ${stage.badgeClass}`}>
                   {stage.emoji} {stage.label}
                 </span>
               );
             })()}
             {conv.unread > 0 && (
-              <span className="ml-auto text-[10px] px-1.5 py-0.5 bg-[var(--accent-primary)] text-white rounded-md font-medium">
+              <span className="ml-auto text-[10px] min-w-[18px] text-center px-1.5 py-0.5 bg-[var(--accent-primary)] text-white rounded-full font-semibold leading-none tabular-nums">
                 {conv.unread}
               </span>
             )}
