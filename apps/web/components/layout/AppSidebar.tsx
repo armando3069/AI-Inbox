@@ -35,14 +35,14 @@ interface NavItem {
 }
 
 const PRIMARY_NAV: NavItem[] = [
-  { id: "inbox",    label: "Inbox",       href: "/",             icon: Inbox },
-  { id: "contacts", label: "Contacts",    href: "/contacts",     icon: Users },
+  { id: "inbox",    label: "Inbox",        href: "/",             icon: Inbox },
+  { id: "contacts", label: "Contacts",     href: "/contacts",     icon: Users },
   { id: "ai",       label: "AI Assistant", href: "/ai-assistant", icon: Bot },
 ];
 
 const SECONDARY_NAV: NavItem[] = [
   { id: "sentiment", label: "Sentiment Analysis", href: "#",                          icon: TrendingUp },
-  { id: "platforms", label: "Manage Platforms",   href: "/connect-platforms?manage=1", icon: Cable },
+  { id: "platforms", label: "Manage Platforms",    href: "/connect-platforms?manage=1", icon: Cable },
 ];
 
 // ── Contacts accordion categories ────────────────────────────────────────────
@@ -77,19 +77,17 @@ function NavItemButton({
   const content = (
     <Link
       href={item.href}
-      className={`relative flex items-center gap-2.5 rounded-[var(--radius-badge)] transition-colors ${
-        expanded ? "px-2.5 py-2" : "justify-center p-2.5"
-      } ${
-        isActive
-          ? "bg-[var(--bg-surface-hover)] text-[var(--text-primary)] font-medium"
-          : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)]"
-      }`}
+      className={`
+        relative flex items-center gap-3 rounded-lg transition-all duration-150
+        ${expanded ? "px-3 py-[9px]" : "justify-center p-2.5"}
+        ${isActive
+          ? "bg-white/70 text-[var(--text-primary)] font-medium shadow-[var(--shadow-sm)]"
+          : "text-[var(--text-secondary)] hover:bg-white/50 hover:text-[var(--text-primary)]"
+        }
+      `}
     >
-      {isActive && (
-        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-[var(--accent-primary)]" />
-      )}
-      <item.icon className="w-[18px] h-[18px] flex-shrink-0" />
-      {expanded && <span className="text-[13px]">{item.label}</span>}
+      <item.icon className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={isActive ? 2 : 1.75} />
+      {expanded && <span className="text-[13px] leading-none">{item.label}</span>}
     </Link>
   );
 
@@ -100,11 +98,11 @@ function NavItemButton({
         <Tooltip.Portal>
           <Tooltip.Content
             side="right"
-            sideOffset={8}
-            className="z-50 rounded-[var(--radius-badge)] bg-[var(--accent-primary)] px-2.5 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-dropdown)] animate-in fade-in-0 zoom-in-95"
+            sideOffset={10}
+            className="z-50 rounded-lg bg-[var(--text-primary)] px-2.5 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-dropdown)] animate-in fade-in-0 zoom-in-95"
           >
             {item.label}
-            <Tooltip.Arrow className="fill-[var(--accent-primary)]" />
+            <Tooltip.Arrow className="fill-[var(--text-primary)]" />
           </Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>
@@ -117,28 +115,21 @@ function NavItemButton({
 // ── AppSidebar ────────────────────────────────────────────────────────────────
 
 export function AppSidebar() {
-  const pathname    = usePathname();
-  const router      = useRouter();
-  const searchParams = useSearchParams();
-  const { user, logout }  = useAuth();
+  const pathname       = usePathname();
+  const router         = useRouter();
+  const searchParams   = useSearchParams();
+  const { user, logout }     = useAuth();
   const { expanded, toggle } = useSidebar();
 
-  const onContacts = pathname === "/contacts" || pathname.startsWith("/contacts/");
+  const onContacts      = pathname === "/contacts" || pathname.startsWith("/contacts/");
   const currentCategory = searchParams.get("category") ?? "all";
 
-  const [contactsOpen, setContactsOpen] = useState(onContacts);
+  const [contactsOpen, setContactsOpen]       = useState(onContacts);
   const [notifPermission, setNotifPermission] = useState<string>("default");
 
-  // Auto-open accordion when navigating to /contacts
-  useEffect(() => {
-    if (onContacts) setContactsOpen(true);
-  }, [onContacts]);
+  useEffect(() => { if (onContacts) setContactsOpen(true); }, [onContacts]);
+  useEffect(() => { setNotifPermission(getNotificationPermission()); }, []);
 
-  useEffect(() => {
-    setNotifPermission(getNotificationPermission());
-  }, []);
-
-  // Fetch contacts for category counts (uses shared React Query cache)
   const { data: contacts = [] } = useQuery({
     ...contactsQueryKeys.list({}),
     staleTime: 30_000,
@@ -166,91 +157,97 @@ export function AppSidebar() {
   return (
     <Tooltip.Provider>
       <div
-        className={`flex flex-col bg-[var(--sidebar-bg)]  transition-[width] duration-200 ease-in-out ${
-          expanded ? "w-[240px]" : "w-[60px]"
-        }`}
+        className={`
+          flex flex-col bg-[var(--sidebar-bg)] transition-[width] duration-200 ease-in-out
+          ${expanded ? "w-[232px]" : "w-[56px]"}
+        `}
       >
-        {/* ── Logo + Toggle ──────────────────────────────────────── */}
-        <div className={`flex items-center ${expanded ? "justify-between px-4" : "justify-center px-2"} pt-4 pb-3`}>
+        {/* ── Logo + Toggle ──────────────────────────────────────────── */}
+        <div className={`flex items-center ${expanded ? "justify-between px-4" : "justify-center"} h-14`}>
           {expanded ? (
-            <Link href="/" className="flex items-center gap-2">
-              <Image src="/logo.png" width={100} height={100} alt="logo" className="w-8 h-8 rounded-[var(--radius-badge)]" />
-              <span className="text-[15px] font-semibold text-[var(--text-primary)]">AI Inbox</span>
+            <Link href="/" className="flex items-center gap-2.5">
+              <Image src="/logo.png" width={100} height={100} alt="logo" className="w-7 h-7 rounded-lg" />
+              <span className="text-[14px] font-semibold text-[var(--text-primary)] tracking-tight">AI Inbox</span>
             </Link>
           ) : (
-            <Link href="/">
-              <Image src="/logo.png" width={100} height={100} alt="logo" className="w-8 h-8 rounded-[var(--radius-badge)]" />
+            <Link href="/" className="flex items-center justify-center">
+              <Image src="/logo.png" width={100} height={100} alt="logo" className="w-7 h-7 rounded-lg" />
             </Link>
           )}
           {expanded && (
-            <button onClick={toggle} className="p-1.5 rounded-[var(--radius-badge)] text-[var(--text-tertiary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-secondary)] transition-colors">
+            <button
+              onClick={toggle}
+              className="p-1 rounded-md text-[var(--text-tertiary)] hover:bg-black/[0.04] hover:text-[var(--text-secondary)] transition-colors"
+            >
               <PanelLeftClose className="w-4 h-4" />
             </button>
           )}
         </div>
 
-        {/* Collapsed toggle */}
+        {/* ── Collapsed toggle ────────────────────────────────────────── */}
         {!expanded && (
-          <div className="flex justify-center pb-2">
-            <button onClick={toggle} className="p-1.5 rounded-[var(--radius-badge)] text-[var(--text-tertiary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-secondary)] transition-colors">
+          <div className="flex justify-center pb-1">
+            <button
+              onClick={toggle}
+              className="p-1 rounded-md text-[var(--text-tertiary)] hover:bg-black/[0.04] hover:text-[var(--text-secondary)] transition-colors"
+            >
               <PanelLeftOpen className="w-4 h-4" />
             </button>
           </div>
         )}
 
-        {/* ── Primary Nav ────────────────────────────────────────── */}
-        <div className={`flex-1 overflow-y-auto ${expanded ? "px-3" : "px-1.5"} pb-3`}>
-          <div className="space-y-0.5">
+        {/* ── Primary Nav ─────────────────────────────────────────────── */}
+        <div className={`flex-1 overflow-y-auto ${expanded ? "px-3" : "px-2"} pt-1 pb-3`}>
+          <div className="space-y-1">
             {PRIMARY_NAV.map((item) => {
 
-              // ── Contacts accordion (only when sidebar is expanded) ──
+              /* ── Contacts accordion ──────────────────────────────── */
               if (item.id === "contacts" && expanded) {
                 return (
                   <div key="contacts">
-                    {/* Contacts header row */}
                     <button
                       onClick={() => {
                         if (!onContacts) router.push("/contacts");
                         setContactsOpen((o) => !o);
                       }}
-                      className={`relative w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[var(--radius-badge)] transition-colors ${
-                        onContacts
-                          ? "bg-[var(--bg-surface-hover)] text-[var(--text-primary)] font-medium"
-                          : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)]"
-                      }`}
+                      className={`
+                        relative w-full flex items-center gap-3 px-3 py-[9px] rounded-lg transition-all duration-150
+                        ${onContacts
+                          ? "bg-white/70 text-[var(--text-primary)] font-medium shadow-[var(--shadow-sm)]"
+                          : "text-[var(--text-secondary)] hover:bg-white/50 hover:text-[var(--text-primary)]"
+                        }
+                      `}
                     >
-                      {onContacts && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-r-full bg-[var(--accent-primary)]" />
-                      )}
-                      <Users className="w-[18px] h-[18px] flex-shrink-0" />
-                      <span className="text-[13px] flex-1 text-left">Contacts</span>
+                      <Users className="w-[18px] h-[18px] flex-shrink-0" strokeWidth={onContacts ? 2 : 1.75} />
+                      <span className="text-[13px] leading-none flex-1 text-left">Contacts</span>
                       <ChevronDown
                         className={`w-3.5 h-3.5 text-[var(--text-tertiary)] transition-transform duration-200 ${
-                          contactsOpen ? "rotate-180" : ""
+                          contactsOpen ? "" : "-rotate-90"
                         }`}
                       />
                     </button>
 
-                    {/* Sub-categories accordion */}
                     {contactsOpen && (
-                      <div className="mt-0.5 space-y-0.5">
+                      <div className="mt-1 space-y-0.5 ml-1">
                         {CONTACT_CATEGORIES.map((cat) => {
-                          const count      = getCatCount(contacts, cat);
+                          const count       = getCatCount(contacts, cat);
                           const isActiveCat = onContacts && currentCategory === cat.id;
                           return (
                             <Link
                               key={cat.id}
                               href={`/contacts?category=${cat.id}`}
-                              className={`flex items-center justify-between gap-2 pl-9 pr-2.5 py-1.5 rounded-[var(--radius-badge)] text-[13px] transition-colors ${
-                                isActiveCat
-                                  ? "bg-[var(--bg-surface-hover)] text-[var(--text-primary)] font-medium"
-                                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)]"
-                              }`}
+                              className={`
+                                flex items-center justify-between gap-2 pl-8 pr-3 py-[6px] rounded-md text-[13px] transition-all duration-150
+                                ${isActiveCat
+                                  ? "bg-white/60 text-[var(--text-primary)] font-medium"
+                                  : "text-[var(--text-secondary)] hover:bg-white/40 hover:text-[var(--text-primary)]"
+                                }
+                              `}
                             >
                               <span>{cat.label}</span>
                               {count > 0 && (
-                                <span className={`text-[12px] tabular-nums font-medium ${
-                                  isActiveCat ? "text-[var(--text-primary)]" : "text-[var(--text-tertiary)]"
+                                <span className={`text-[11px] tabular-nums ${
+                                  isActiveCat ? "text-[var(--text-secondary)]" : "text-[var(--text-tertiary)]"
                                 }`}>
                                   {count}
                                 </span>
@@ -264,63 +261,55 @@ export function AppSidebar() {
                 );
               }
 
-              // ── Regular nav item ──
               return (
-                <NavItemButton
-                  key={item.id}
-                  item={item}
-                  isActive={isActive(item)}
-                  expanded={expanded}
-                />
+                <NavItemButton key={item.id} item={item} isActive={isActive(item)} expanded={expanded} />
               );
             })}
           </div>
 
-          {/* ── Secondary Nav ──────────────────────────────────────── */}
-          <div className="mt-5 pt-5 border-t border-[var(--border-subtle)]">
+          {/* ── Tools section ──────────────────────────────────────────── */}
+          <div className="mt-6 pt-4 border-t border-black/[0.06]">
             {expanded && (
-              <div className="px-2.5 mb-2">
-                <h3 className="text-[10px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+              <div className="px-3 mb-2">
+                <span className="text-[10px] font-medium text-[var(--text-tertiary)] uppercase tracking-widest">
                   Tools
-                </h3>
+                </span>
               </div>
             )}
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               {SECONDARY_NAV.map((item) => (
                 <NavItemButton key={item.id} item={item} isActive={isActive(item)} expanded={expanded} />
               ))}
             </div>
 
-            {/* Notification status */}
+            {/* ── Notifications ──────────────────────────────────────── */}
             {expanded && (
-              <div className="mt-3">
-                <div className="border-t border-[var(--border-subtle)] pt-3">
-                  {notifPermission === "unavailable" ? null : notifPermission === "granted" ? (
-                    <div className="flex items-center gap-2.5 px-2.5 py-2 text-emerald-600">
-                      <Bell className="w-4 h-4" />
-                      <span className="text-[12px]">Notificări active</span>
-                      <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    </div>
-                  ) : notifPermission === "denied" ? (
-                    <div className="flex items-center gap-2.5 px-2.5 py-2 text-[var(--text-tertiary)]">
-                      <BellOff className="w-4 h-4" />
-                      <span className="text-[12px]">Notificări blocate</span>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={handleEnableNotifications}
-                      className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[var(--radius-badge)] text-[var(--accent-blue)] hover:bg-blue-50/60 transition-colors"
-                    >
-                      <Bell className="w-4 h-4" />
-                      <span className="text-[12px] font-medium">Activează notificările</span>
-                    </button>
-                  )}
-                </div>
+              <div className="mt-4 pt-3 border-t border-black/[0.06]">
+                {notifPermission === "unavailable" ? null : notifPermission === "granted" ? (
+                  <div className="flex items-center gap-2.5 px-3 py-2 text-emerald-600 rounded-lg">
+                    <Bell className="w-4 h-4" />
+                    <span className="text-[12px] font-medium">Notifications on</span>
+                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  </div>
+                ) : notifPermission === "denied" ? (
+                  <div className="flex items-center gap-2.5 px-3 py-2 text-[var(--text-tertiary)]">
+                    <BellOff className="w-4 h-4" />
+                    <span className="text-[12px]">Notifications blocked</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleEnableNotifications}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[var(--accent-blue)] hover:bg-blue-50/40 transition-colors"
+                  >
+                    <Bell className="w-4 h-4" />
+                    <span className="text-[12px] font-medium">Enable notifications</span>
+                  </button>
+                )}
               </div>
             )}
 
             {!expanded && (
-              <div className="mt-3 border-t border-[var(--border-subtle)] pt-3 flex justify-center">
+              <div className="mt-3 pt-3 border-t border-black/[0.06] flex justify-center">
                 {notifPermission === "unavailable" ? null : notifPermission === "granted" ? (
                   <Tooltip.Root delayDuration={0}>
                     <Tooltip.Trigger asChild>
@@ -330,9 +319,9 @@ export function AppSidebar() {
                       </div>
                     </Tooltip.Trigger>
                     <Tooltip.Portal>
-                      <Tooltip.Content side="right" sideOffset={8} className="z-50 rounded-[var(--radius-badge)] bg-[var(--accent-primary)] px-2.5 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-dropdown)]">
-                        Notificări active
-                        <Tooltip.Arrow className="fill-[var(--accent-primary)]" />
+                      <Tooltip.Content side="right" sideOffset={10} className="z-50 rounded-lg bg-[var(--text-primary)] px-2.5 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-dropdown)]">
+                        Notifications on
+                        <Tooltip.Arrow className="fill-[var(--text-primary)]" />
                       </Tooltip.Content>
                     </Tooltip.Portal>
                   </Tooltip.Root>
@@ -344,23 +333,23 @@ export function AppSidebar() {
                       </div>
                     </Tooltip.Trigger>
                     <Tooltip.Portal>
-                      <Tooltip.Content side="right" sideOffset={8} className="z-50 rounded-[var(--radius-badge)] bg-[var(--accent-primary)] px-2.5 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-dropdown)]">
-                        Notificări blocate
-                        <Tooltip.Arrow className="fill-[var(--accent-primary)]" />
+                      <Tooltip.Content side="right" sideOffset={10} className="z-50 rounded-lg bg-[var(--text-primary)] px-2.5 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-dropdown)]">
+                        Notifications blocked
+                        <Tooltip.Arrow className="fill-[var(--text-primary)]" />
                       </Tooltip.Content>
                     </Tooltip.Portal>
                   </Tooltip.Root>
                 ) : (
                   <Tooltip.Root delayDuration={0}>
                     <Tooltip.Trigger asChild>
-                      <button onClick={handleEnableNotifications} className="p-2.5 rounded-[var(--radius-badge)] text-[var(--accent-blue)] hover:bg-blue-50/60 transition-colors">
+                      <button onClick={handleEnableNotifications} className="p-2.5 rounded-lg text-[var(--accent-blue)] hover:bg-blue-50/40 transition-colors">
                         <Bell className="w-[18px] h-[18px]" />
                       </button>
                     </Tooltip.Trigger>
                     <Tooltip.Portal>
-                      <Tooltip.Content side="right" sideOffset={8} className="z-50 rounded-[var(--radius-badge)] bg-[var(--accent-primary)] px-2.5 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-dropdown)]">
-                        Activează notificările
-                        <Tooltip.Arrow className="fill-[var(--accent-primary)]" />
+                      <Tooltip.Content side="right" sideOffset={10} className="z-50 rounded-lg bg-[var(--text-primary)] px-2.5 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-dropdown)]">
+                        Enable notifications
+                        <Tooltip.Arrow className="fill-[var(--text-primary)]" />
                       </Tooltip.Content>
                     </Tooltip.Portal>
                   </Tooltip.Root>
@@ -370,23 +359,26 @@ export function AppSidebar() {
           </div>
         </div>
 
-        {/* ── User profile ───────────────────────────────────────── */}
-        <div className={` ${expanded ? "px-3 py-3" : "px-1.5 py-3"}`}>
+        {/* ── User profile ──────────────────────────────────────────── */}
+        <div className={`border-t border-black/[0.06] ${expanded ? "px-3 py-3" : "px-2 py-3"}`}>
           {expanded ? (
-            <div className="flex items-center gap-2.5 px-2 py-1.5">
+            <div className="flex items-center gap-2.5 px-2 py-1">
               {user?.avatar ? (
-                <Image src={user.avatar} width={32} height={32} alt={user?.name ?? ""} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                <Image src={user.avatar} width={32} height={32} alt={user?.name ?? ""} className="w-8 h-8 rounded-full object-cover flex-shrink-0 ring-1 ring-black/[0.06]" />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-[var(--accent-primary)] flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-[var(--text-primary)] flex items-center justify-center flex-shrink-0">
                   <span className="text-[10px] font-semibold text-white">{initials}</span>
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-medium text-[var(--text-primary)] truncate">{user?.name ?? "—"}</p>
-                <p className="text-[11px] text-[var(--text-tertiary)] truncate">{user?.email ?? ""}</p>
+                <p className="text-[13px] font-medium text-[var(--text-primary)] truncate leading-tight">{user?.name ?? "—"}</p>
+                <p className="text-[11px] text-[var(--text-tertiary)] truncate leading-tight mt-0.5">{user?.email ?? ""}</p>
               </div>
-              <button onClick={handleLogout} className="p-1.5 rounded-[var(--radius-badge)] text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50/60 transition-colors">
-                <LogOut className="w-4 h-4" />
+              <button
+                onClick={handleLogout}
+                className="p-1.5 rounded-md text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50/50 transition-colors"
+              >
+                <LogOut className="w-3.5 h-3.5" />
               </button>
             </div>
           ) : (
@@ -395,31 +387,31 @@ export function AppSidebar() {
                 <Tooltip.Trigger asChild>
                   <div>
                     {user?.avatar ? (
-                      <Image src={user.avatar} width={32} height={32} alt={user?.name ?? ""} className="w-8 h-8 rounded-full object-cover" />
+                      <Image src={user.avatar} width={32} height={32} alt={user?.name ?? ""} className="w-8 h-8 rounded-full object-cover ring-1 ring-black/[0.06]" />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-[var(--accent-primary)] flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-[var(--text-primary)] flex items-center justify-center">
                         <span className="text-[10px] font-semibold text-white">{initials}</span>
                       </div>
                     )}
                   </div>
                 </Tooltip.Trigger>
                 <Tooltip.Portal>
-                  <Tooltip.Content side="right" sideOffset={8} className="z-50 rounded-[var(--radius-badge)] bg-[var(--accent-primary)] px-2.5 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-dropdown)]">
+                  <Tooltip.Content side="right" sideOffset={10} className="z-50 rounded-lg bg-[var(--text-primary)] px-2.5 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-dropdown)]">
                     {user?.name ?? "—"}
-                    <Tooltip.Arrow className="fill-[var(--accent-primary)]" />
+                    <Tooltip.Arrow className="fill-[var(--text-primary)]" />
                   </Tooltip.Content>
                 </Tooltip.Portal>
               </Tooltip.Root>
               <Tooltip.Root delayDuration={0}>
                 <Tooltip.Trigger asChild>
-                  <button onClick={handleLogout} className="p-1.5 rounded-[var(--radius-badge)] text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50/60 transition-colors">
+                  <button onClick={handleLogout} className="p-1.5 rounded-md text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50/50 transition-colors">
                     <LogOut className="w-3.5 h-3.5" />
                   </button>
                 </Tooltip.Trigger>
                 <Tooltip.Portal>
-                  <Tooltip.Content side="right" sideOffset={8} className="z-50 rounded-[var(--radius-badge)] bg-[var(--accent-primary)] px-2.5 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-dropdown)]">
-                    Deconectare
-                    <Tooltip.Arrow className="fill-[var(--accent-primary)]" />
+                  <Tooltip.Content side="right" sideOffset={10} className="z-50 rounded-lg bg-[var(--text-primary)] px-2.5 py-1.5 text-[12px] font-medium text-white shadow-[var(--shadow-dropdown)]">
+                    Log out
+                    <Tooltip.Arrow className="fill-[var(--text-primary)]" />
                   </Tooltip.Content>
                 </Tooltip.Portal>
               </Tooltip.Root>

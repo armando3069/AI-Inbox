@@ -9,8 +9,6 @@ import {
   Users,
   Mail,
   Phone,
-  SlidersHorizontal,
-  Settings2,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -19,7 +17,7 @@ import {
 import * as Checkbox from "@radix-ui/react-checkbox";
 import { contactsQueryKeys } from "@/services/contacts/contacts.service";
 import type { ContactRow } from "@/services/contacts/contacts.types";
-import { LIFECYCLE_STAGES, getLifecycleStage } from "@/lib/lifecycle";
+import { getLifecycleStage } from "@/lib/lifecycle";
 import { AvatarWithPlatformBadge } from "@/components/chat/AvatarWithPlatformBadge";
 import { cn } from "@/lib/cn";
 
@@ -43,12 +41,6 @@ const CATEGORIES: Category[] = [
   { id: "active",    label: "Active",    lifecycles: ["PAYMENT", "CUSTOMER"] },
   { id: "past",      label: "Past",      lifecycles: ["COLD_LEAD"] },
 ];
-
-function getCategoryCount(contacts: ContactRow[], cat: Category): number {
-  if (cat.lifecycles === null) return contacts.length;
-  if (cat.lifecycles.length === 0) return contacts.filter((c) => !c.lifecycle_status).length;
-  return contacts.filter((c) => cat.lifecycles!.includes(c.lifecycle_status)).length;
-}
 
 function filterByCategory(contacts: ContactRow[], cat: Category): ContactRow[] {
   if (cat.lifecycles === null) return contacts;
@@ -74,15 +66,15 @@ function formatDate(iso: string): string {
 
 function PlatformBadge({ platform }: { platform: string }) {
   const styles: Record<string, string> = {
-    telegram: "bg-sky-50 text-sky-600 border-sky-100",
-    whatsapp: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    teams:    "bg-violet-50 text-violet-600 border-violet-100",
+    telegram: "bg-sky-50/80 text-sky-600 border-sky-200/60",
+    whatsapp: "bg-emerald-50/80 text-emerald-600 border-emerald-200/60",
+    teams:    "bg-violet-50/80 text-violet-600 border-violet-200/60",
   };
   return (
     <span
       className={cn(
-        "inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-medium capitalize",
-        styles[platform] ?? "bg-stone-50 text-stone-500 border-stone-200"
+        "inline-flex items-center px-2 py-[3px] rounded-md border text-[11px] font-medium capitalize leading-none",
+        styles[platform] ?? "bg-stone-50/80 text-stone-500 border-stone-200/60"
       )}
     >
       {platform}
@@ -97,7 +89,7 @@ function LifecycleBadge({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 px-2 py-0.5 rounded-md border text-[11px] font-medium",
+        "inline-flex items-center gap-1 px-2 py-[3px] rounded-md border text-[11px] font-medium leading-none",
         stage.badgeClass
       )}
     >
@@ -123,7 +115,7 @@ function PremiumCheckbox({
       checked={indeterminate ? "indeterminate" : checked}
       onCheckedChange={(v) => onCheckedChange(v === true)}
       className={cn(
-        "flex h-4 w-4 items-center justify-center rounded border transition-all",
+        "flex h-[15px] w-[15px] items-center justify-center rounded-[4px] border transition-all duration-150",
         checked || indeterminate
           ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]"
           : "border-[var(--border-default)] bg-white hover:border-[var(--text-tertiary)]"
@@ -132,9 +124,9 @@ function PremiumCheckbox({
     >
       <Checkbox.Indicator>
         {indeterminate ? (
-          <div className="h-0.5 w-2 rounded-full bg-white" />
+          <div className="h-[1.5px] w-2 rounded-full bg-white" />
         ) : (
-          <Check className="h-3 w-3 text-white" strokeWidth={3} />
+          <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
         )}
       </Checkbox.Indicator>
     </Checkbox.Root>
@@ -144,8 +136,7 @@ function PremiumCheckbox({
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ContactsPage() {
-  const router = useRouter();
-
+  const router       = useRouter();
   const searchParams = useSearchParams();
 
   const [search, setSearch]                     = useState("");
@@ -160,14 +151,11 @@ export default function ContactsPage() {
     return () => clearTimeout(id);
   }, [search]);
 
-  // Sync category from URL (when clicking from sidebar)
   useEffect(() => {
     const cat = searchParams.get("category") ?? "all";
     setSelectedCategory(cat);
     setPage(1);
   }, [searchParams]);
-
-  useEffect(() => { setPage(1); }, [selectedCategory]);
 
   const { data: allContacts = [], isLoading, isError, refetch } = useQuery(
     contactsQueryKeys.list({ search: debouncedSearch || undefined })
@@ -217,232 +205,219 @@ export default function ContactsPage() {
     router.push("/");
   };
 
-  // shared cell class
-  const cell = "px-4 py-3 border border-[var(--border-subtle)]";
+  // ── Shared table cell classes ──────────────────────────────────────────────
+  const thCell = "px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)] border-b border-[var(--border-default)]";
+  const tdCell = "px-4 py-3.5 border-b border-[var(--border-subtle)]";
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-[var(--sidebar-bg)] ">
-      <div className="flex-1 overflow-y-auto">
-        <div className="h-full flex flex-col  w-full">
+    <div className="flex-1 flex flex-col overflow-hidden rounded-xl bg-white shadow-[var(--shadow-card)] border border-[var(--border-default)]">
 
-          {/* /!*── Toolbar ─────────────────────────────────────────────── *!/*/}
-          {/* /!* <div className="flex items-center gap-3 px-4">*!/*/}
-          {/* /!*   <div className="relative w-[280px]">*!/*/}
-          {/* /!*     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-tertiary)]" />*!/*/}
-          {/* /!*     <input*!/*/}
-          {/* /!*       type="text"*!/*/}
-          {/* /!*       value={search}*!/*/}
-          {/* /!*       onChange={(e) => setSearch(e.target.value)}*!/*/}
-          {/* /!*       placeholder="Search..."*!/*/}
-          {/* /!*       className="w-full pl-9 pr-3 py-2 text-[13px] border border-[var(--border-default)] rounded-[var(--radius-input)] bg-white text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/10 focus:border-[var(--accent-primary)]/30 transition-colors"*!/*/}
-          {/* /!*     />*!/*/}
-          {/* /!*   </div>*!/*/}
-          {/* /!*   <div className="flex-1" />*!/*/}
-          {/* /!*   <button className="flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium rounded-[var(--radius-input)] border border-[var(--border-default)] text-[var(--text-secondary)] bg-white hover:bg-[var(--bg-surface-hover)] transition-colors">*!/*/}
-          {/* /!*     <SlidersHorizontal className="w-3.5 h-3.5" />*!/*/}
-          {/* /!*     Filters*!/*/}
-          {/* /!*   </button>*!/*/}
-          {/* /!*   <button className="flex items-center gap-1.5 px-3.5 py-2 text-[13px] font-medium rounded-[var(--radius-input)] border border-[var(--border-default)] text-[var(--text-secondary)] bg-white hover:bg-[var(--bg-surface-hover)] transition-colors">*!/*/}
-          {/* /!*     <Settings2 className="w-3.5 h-3.5" />*!/*/}
-          {/* /!*     View settings*!/*/}
-          {/* /!*   </button>*!/*/}
-          {/* /!* </div>*!/*/}
+      {/* ── Header ─────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between px-6 pt-5 pb-4">
+        <div>
+          <h1 className="text-[18px] font-semibold text-[var(--text-primary)] tracking-tight leading-none">
+            Contacts
+          </h1>
+          {!isLoading && (
+            <p className="text-[12px] text-[var(--text-tertiary)] mt-1.5">
+              {sorted.length} contact{sorted.length !== 1 ? "s" : ""}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {selectedIds.size > 0 && (
+            <span className="text-[11px] text-[var(--text-tertiary)] font-medium mr-1 tabular-nums">
+              {selectedIds.size} selected
+            </span>
+          )}
+          <button className="px-3.5 py-[7px] text-[13px] font-medium rounded-lg border border-[var(--border-default)] text-[var(--text-secondary)] bg-white hover:bg-[var(--bg-surface-hover)] hover:border-[var(--border-default)] active:scale-[0.98] transition-all duration-150">
+            Actions
+          </button>
+          <button className="px-3.5 py-[7px] text-[13px] font-medium rounded-lg bg-[var(--accent-primary)] text-white hover:bg-[#222] active:scale-[0.98] transition-all duration-150 shadow-sm">
+            New contact
+          </button>
+        </div>
+      </div>
 
-          {/*</div>*/}
+      {/* ── Search toolbar ──────────────────────────────────────────── */}
+      <div className="flex items-center gap-3 px-6 pb-4">
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-tertiary)]" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search contacts..."
+            className="w-full pl-9 pr-3 py-2 text-[13px] border border-[var(--border-default)] rounded-lg bg-[var(--bg-surface-hover)]/60 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 focus:border-[var(--border-default)] focus:bg-white transition-all duration-150"
+          />
+        </div>
+      </div>
 
-          <div className="flex flex-1 flex-col min-h-0 rounded-xl border py-3 border-[var(--border-default)] bg-white shadow-[var(--shadow-card)]  ">
+      {/* ── Table ───────────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2.5 flex-1 text-[13px] text-[var(--text-tertiary)]">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Loading contacts...</span>
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center flex-1 gap-2">
+            <p className="text-[13px] text-red-500">Failed to load contacts.</p>
+            <button onClick={() => refetch()} className="text-[13px] text-[var(--accent-blue)] hover:underline">
+              Try again
+            </button>
+          </div>
+        ) : sorted.length === 0 ? (
+          <div className="flex flex-col items-center justify-center flex-1 gap-3 text-center py-16">
+            <div className="h-11 w-11 rounded-xl bg-[var(--bg-surface-hover)] flex items-center justify-center">
+              <Users className="h-5 w-5 text-[var(--text-tertiary)]" />
+            </div>
+            <div>
+              <p className="text-[14px] font-medium text-[var(--text-secondary)]">No contacts found</p>
+              <p className="text-[13px] text-[var(--text-tertiary)] mt-1">
+                {search ? "Try adjusting your search." : "No contacts in this category."}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto flex-1">
+              <table className="w-full text-[13px]">
+                <thead className="sticky top-0 z-10 bg-white">
+                  <tr>
+                    <th className={cn(thCell, "w-11 text-center")}>
+                      <PremiumCheckbox
+                        checked={allOnPage}
+                        indeterminate={someOnPage}
+                        onCheckedChange={toggleAll}
+                      />
+                    </th>
+                    <th className={thCell}>Name</th>
+                    <th className={thCell}>Platform</th>
+                    <th className={thCell}>Lifecycle</th>
+                    <th className={thCell}>Email</th>
+                    <th className={thCell}>Phone</th>
+                    <th className={thCell}>
+                      <button
+                        onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
+                        className="flex items-center gap-1 hover:text-[var(--text-secondary)] transition-colors uppercase tracking-wider"
+                      >
+                        Added
+                        <ChevronDown className={cn("w-3 h-3 transition-transform duration-200", sortDir === "asc" && "rotate-180")} />
+                      </button>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginated.map((row) => {
+                    const isSelected = selectedIds.has(row.id);
+                    return (
+                      <tr
+                        key={row.id}
+                        onClick={() => handleRowClick(row)}
+                        className={cn(
+                          "cursor-pointer transition-colors duration-100 group",
+                          isSelected
+                            ? "bg-[var(--accent-primary)]/[0.02]"
+                            : "hover:bg-[var(--bg-surface-hover)]/60"
+                        )}
+                      >
+                        <td className={cn(tdCell, "w-11 text-center")}>
+                          <PremiumCheckbox checked={isSelected} onCheckedChange={() => toggleOne(row.id)} />
+                        </td>
 
-            <div className="flex items-center justify-between px-4 pb-4 ">
-              <h1 className="text-[20px] font-semibold text-[var(--text-primary)] tracking-tight">
-                Contacts
-              </h1>
-              <div className="flex items-center gap-2">
-                {selectedIds.size > 0 && (
-                    <span className="text-[12px] text-[var(--text-secondary)] mr-1">
-                    {selectedIds.size} selected
-                  </span>
-                )}
-                <button className="px-4 py-2 text-[13px] font-medium rounded-[var(--radius-button)] border border-[var(--border-default)] text-[var(--text-secondary)] bg-white hover:bg-[var(--bg-surface-hover)] transition-colors">
-                  Actions
+                        <td className={tdCell}>
+                          <div className="flex items-center gap-2.5">
+                            <AvatarWithPlatformBadge
+                              name={displayName(row)}
+                              avatar={row.contact_avatar}
+                              platform={row.platform}
+                              size="sm"
+                            />
+                            <div className="min-w-0">
+                              <p className="font-medium text-[var(--text-primary)] truncate max-w-[180px] leading-tight">
+                                {displayName(row)}
+                              </p>
+                              {row.contact_username && row.contact_name && (
+                                <p className="text-[11px] text-[var(--text-tertiary)] truncate max-w-[180px] mt-0.5 leading-tight">
+                                  @{row.contact_username}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className={tdCell}>
+                          <PlatformBadge platform={row.platform} />
+                        </td>
+
+                        <td className={tdCell}>
+                          {row.lifecycle_status ? (
+                            <LifecycleBadge status={row.lifecycle_status} />
+                          ) : (
+                            <span className="text-[var(--text-tertiary)] text-[12px]">—</span>
+                          )}
+                        </td>
+
+                        <td className={cn(tdCell, "text-[var(--text-secondary)]")}>
+                          {row.contact_email ? (
+                            <div className="flex items-center gap-1.5 max-w-[200px]">
+                              <Mail className="w-3.5 h-3.5 text-[var(--text-tertiary)] flex-shrink-0" strokeWidth={1.5} />
+                              <span className="truncate">{row.contact_email}</span>
+                            </div>
+                          ) : (
+                            <span className="text-[var(--text-tertiary)]">—</span>
+                          )}
+                        </td>
+
+                        <td className={cn(tdCell, "text-[var(--text-secondary)]")}>
+                          {row.contact_phone ? (
+                            <div className="flex items-center gap-1.5">
+                              <Phone className="w-3.5 h-3.5 text-[var(--text-tertiary)] flex-shrink-0" strokeWidth={1.5} />
+                              <span>{row.contact_phone}</span>
+                            </div>
+                          ) : (
+                            <span className="text-[var(--text-tertiary)]">—</span>
+                          )}
+                        </td>
+
+                        <td className={cn(tdCell, "text-[12px] text-[var(--text-tertiary)] whitespace-nowrap")}>
+                          {formatDate(row.created_at)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* ── Pagination ──────────────────────────────────────────── */}
+            <div className="flex items-center justify-between px-6 py-3 border-t border-[var(--border-subtle)]">
+              <p className="text-[12px] text-[var(--text-tertiary)]">
+                <span className="tabular-nums">{sorted.length}</span> records
+              </p>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="flex items-center justify-center h-7 w-7 rounded-md border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all duration-150"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-                <button className="px-4 py-2 text-[13px] font-medium rounded-[var(--radius-button)] bg-[var(--accent-primary)] text-white hover:bg-[#222] shadow-sm transition-colors">
-                  New contact
+                <span className="text-[12px] text-[var(--text-secondary)] px-2 tabular-nums min-w-[40px] text-center">
+                  {page} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="flex items-center justify-center h-7 w-7 rounded-md border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] active:scale-95 disabled:opacity-30 disabled:pointer-events-none transition-all duration-150"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
-
-            {/* ── Table card ───────────────────────────────────────── */}
-            <div className="flex-1 min-w-2 py-2  bg-white  flex flex-col overflow-hidden ">
-              {isLoading ? (
-                <div className="flex items-center justify-center gap-2 flex-1 text-[13px] text-[var(--text-tertiary)]">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Loading contacts...
-                </div>
-              ) : isError ? (
-                <div className="flex flex-col items-center justify-center flex-1 gap-2">
-                  <p className="text-[13px] text-red-500">Failed to load contacts.</p>
-                  <button onClick={() => refetch()} className="text-[13px] text-[var(--accent-blue)] hover:underline">
-                    Try again
-                  </button>
-                </div>
-              ) : sorted.length === 0 ? (
-                <div className="flex flex-col items-center justify-center flex-1 gap-3 text-center">
-                  <div className="h-12 w-12 rounded-2xl bg-[var(--bg-surface-hover)] flex items-center justify-center">
-                    <Users className="h-6 w-6 text-[var(--text-tertiary)]" />
-                  </div>
-                  <div>
-                    <p className="text-[14px] font-medium text-[var(--text-secondary)]">No contacts found</p>
-                    <p className="text-[13px] text-[var(--text-tertiary)] mt-1">
-                      {search ? "Try adjusting your search." : "No contacts in this category."}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="overflow-x-auto flex-1">
-                    <table className="w-full text-[13px] border-collapse ">
-                      <thead>
-                        <tr className="bg-[var(--bg-surface-hover)]/60">
-                          <th className={cn(cell, "w-10")}>
-                            <PremiumCheckbox
-                              checked={allOnPage}
-                              indeterminate={someOnPage}
-                              onCheckedChange={toggleAll}
-                            />
-                          </th>
-                          <th className={cn(cell, "text-left text-[12px] font-semibold text-[var(--text-secondary)]")}>Name</th>
-                          <th className={cn(cell, "text-left text-[12px] font-semibold text-[var(--text-secondary)]")}>Platform</th>
-                          <th className={cn(cell, "text-left text-[12px] font-semibold text-[var(--text-secondary)]")}>Lifecycle</th>
-                          <th className={cn(cell, "text-left text-[12px] font-semibold text-[var(--text-secondary)]")}>Email</th>
-                          <th className={cn(cell, "text-left text-[12px] font-semibold text-[var(--text-secondary)]")}>Phone</th>
-                          <th className={cn(cell, "text-left text-[12px] font-semibold text-[var(--text-secondary)]")}>
-                            <button
-                              onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
-                              className="flex items-center gap-1 hover:text-[var(--text-primary)] transition-colors"
-                            >
-                              Added
-                              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", sortDir === "asc" && "rotate-180")} />
-                            </button>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paginated.map((row) => {
-                          const isSelected = selectedIds.has(row.id);
-                          return (
-                            <tr
-                              key={row.id}
-                              onClick={() => handleRowClick(row)}
-                              className={cn(
-                                "cursor-pointer transition-colors",
-                                isSelected ? "bg-[var(--accent-primary)]/[0.03]" : "hover:bg-[var(--bg-surface-hover)]"
-                              )}
-                            >
-                              <td className={cn(cell, "w-10")}>
-                                <PremiumCheckbox checked={isSelected} onCheckedChange={() => toggleOne(row.id)} />
-                              </td>
-
-                              {/* Name */}
-                              <td className={cell}>
-                                <div className="flex items-center gap-2.5">
-                                  <AvatarWithPlatformBadge
-                                    name={displayName(row)}
-                                    avatar={row.contact_avatar}
-                                    platform={row.platform}
-                                    size="sm"
-                                  />
-                                  <div className="min-w-0">
-                                    <p className="font-medium text-[var(--text-primary)] truncate max-w-[160px]">
-                                      {displayName(row)}
-                                    </p>
-                                    {row.contact_username && row.contact_name && (
-                                      <p className="text-[11px] text-[var(--text-tertiary)] truncate max-w-[160px]">
-                                        @{row.contact_username}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                              </td>
-
-                              {/* Platform */}
-                              <td className={cell}>
-                                <PlatformBadge platform={row.platform} />
-                              </td>
-
-                              {/* Lifecycle */}
-                              <td className={cell}>
-                                {row.lifecycle_status ? (
-                                  <LifecycleBadge status={row.lifecycle_status} />
-                                ) : (
-                                  <span className="text-[var(--text-tertiary)] text-[12px]">—</span>
-                                )}
-                              </td>
-
-                              {/* Email */}
-                              <td className={cn(cell, "text-[var(--text-secondary)]")}>
-                                {row.contact_email ? (
-                                  <div className="flex items-center gap-1.5 max-w-[200px]">
-                                    <Mail className="w-3 h-3 text-[var(--text-tertiary)] flex-shrink-0" />
-                                    <span className="truncate">{row.contact_email}</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-[var(--text-tertiary)]">—</span>
-                                )}
-                              </td>
-
-                              {/* Phone */}
-                              <td className={cn(cell, "text-[var(--text-secondary)]")}>
-                                {row.contact_phone ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <Phone className="w-3 h-3 text-[var(--text-tertiary)] flex-shrink-0" />
-                                    <span>{row.contact_phone}</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-[var(--text-tertiary)]">—</span>
-                                )}
-                              </td>
-
-                              {/* Added date */}
-                              <td className={cn(cell, "text-[12px] text-[var(--text-tertiary)] whitespace-nowrap")}>
-                                {formatDate(row.created_at)}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Pagination */}
-                  <div className="flex items-center justify-between px-5 py-3 border-t border-[var(--border-subtle)]">
-                    <p className="text-[12px] text-[var(--text-tertiary)]">
-                      {sorted.length} records
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => setPage((p) => Math.max(1, p - 1))}
-                        disabled={page === 1}
-                        className="flex items-center justify-center h-7 w-7 rounded border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                      >
-                        <ChevronLeft className="w-3.5 h-3.5" />
-                      </button>
-                      <span className="text-[12px] text-[var(--text-secondary)] px-2 tabular-nums">
-                        {page} / {totalPages}
-                      </span>
-                      <button
-                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                        disabled={page === totalPages}
-                        className="flex items-center justify-center h-7 w-7 rounded border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                      >
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
