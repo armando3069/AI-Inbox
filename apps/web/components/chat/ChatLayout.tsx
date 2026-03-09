@@ -197,7 +197,7 @@ export function ChatLayout() {
   };
 
   return (
-    <div className="flex-1 flex overflow-hidden">
+    <div className="flex-1 flex overflow-hidden rounded-2xl border border-[var(--border-default)]  shadow-[var(--shadow-card)]">
       <ConversationList
         conversations={filteredConversations}
         selectedConversation={selectedConversation}

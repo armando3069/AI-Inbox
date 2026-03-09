@@ -86,7 +86,7 @@ export function MessageInput({
   };
 
   return (
-    <div ref={wrapperRef} className="px-5 py-4 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+    <div ref={wrapperRef} className="px-5 py-6 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] ">
       {/* Suggestions panel — smooth collapse/expand */}
       <div
         className={`overflow-hidden transition-all duration-200 ease-in-out ${
@@ -103,13 +103,13 @@ export function MessageInput({
         />
       </div>
 
-      <div className="flex items-end gap-2.5">
+      <div className="flex items-end gap-2.5 ">
         <button className="p-2 hover:bg-[var(--bg-surface-hover)] rounded-[var(--radius-badge)] transition-colors">
           <Paperclip className="w-4.5 h-4.5 text-[var(--text-tertiary)]" />
         </button>
 
         {/* Textarea + emoji button share a relative container */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative ">
           <textarea
             ref={textareaRef}
             value={value}

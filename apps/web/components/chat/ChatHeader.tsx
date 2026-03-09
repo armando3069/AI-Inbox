@@ -25,7 +25,7 @@ export function ChatHeader({ conversation, onUpdateConversation }: ChatHeaderPro
 
   return (
     <>
-      <div className="px-5 py-3.5 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+      <div className="px-5 py-3.5 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] rounded-r-xl">
         <div className="flex items-center justify-between gap-3">
           {/* Left — avatar + name + platform */}
           <div className="flex items-center gap-3 min-w-0">
