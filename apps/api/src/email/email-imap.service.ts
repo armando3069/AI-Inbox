@@ -195,7 +195,16 @@ export class EmailImapService {
     const subject: string = parsed.subject ?? '(no subject)';
     const messageId: string | null = parsed.messageId ?? null;
     const inReplyTo: string | null = parsed.inReplyTo ?? null;
-    const bodyText: string = parsed.text ?? parsed.html ?? '';
+    const bodyText: string = parsed.text ?? '';
+    const bodyHtml: string | null = parsed.html || null;
+    const ccText: string | null = parsed.cc?.text ?? null;
+    const emailDate: string | null = parsed.date ? parsed.date.toISOString() : null;
+    const references: string | null =
+      typeof parsed.references === 'string'
+        ? parsed.references
+        : Array.isArray(parsed.references)
+          ? (parsed.references as string[]).join(' ')
+          : null;
 
     const userId = account.user_id;
 
@@ -239,7 +248,17 @@ export class EmailImapService {
         platform: 'email',
         timestamp: parsed.date ?? new Date(),
         attachments: {
-          emailMeta: { messageId, subject, inReplyTo, from: fromAddress, to: account.external_app_id },
+          emailMeta: {
+            messageId,
+            subject,
+            inReplyTo,
+            references,
+            from: fromAddress,
+            to: account.external_app_id,
+            cc: ccText,
+            date: emailDate,
+            html: bodyHtml,
+          },
         },
       },
     });

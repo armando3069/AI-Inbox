@@ -200,14 +200,17 @@ export class EmailService implements OnModuleInit {
       orderBy: { timestamp: 'desc' },
     });
 
-    const emailMeta = (latestInbound?.attachments as { emailMeta?: { subject?: string; messageId?: string } } | null)
-      ?.emailMeta;
+    const emailMeta = (latestInbound?.attachments as {
+      emailMeta?: { subject?: string; messageId?: string; references?: string };
+    } | null)?.emailMeta;
     const subject = emailMeta?.subject
       ? emailMeta.subject.startsWith('Re:')
         ? emailMeta.subject
         : `Re: ${emailMeta.subject}`
       : 'Re: (no subject)';
     const inReplyTo = emailMeta?.messageId ?? null;
+    const references = [emailMeta?.references, inReplyTo].filter(Boolean).join(' ') || null;
+    const now = new Date();
 
     await this.smtpService.sendEmail({
       smtpConfig: settings.smtp,
@@ -217,7 +220,7 @@ export class EmailService implements OnModuleInit {
       subject,
       text: dto.text,
       inReplyTo,
-      references: inReplyTo,
+      references,
     });
 
     const message = await this.prisma.messages.create({
@@ -226,9 +229,17 @@ export class EmailService implements OnModuleInit {
         sender_type: 'bot',
         text: dto.text,
         platform: 'email',
-        timestamp: new Date(),
+        timestamp: now,
         attachments: {
-          emailMeta: { subject, to: toAddress, from: account.external_app_id },
+          emailMeta: {
+            subject,
+            to: toAddress,
+            from: account.external_app_id,
+            date: now.toISOString(),
+            inReplyTo,
+            references,
+            html: null,
+          },
         },
       },
     });
