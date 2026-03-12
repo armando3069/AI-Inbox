@@ -25,13 +25,13 @@ const TONE_OPTIONS: { value: ResponseTone; label: string; description: string }[
 
 // ── Shared styles ─────────────────────────────────────────────────────────────
 
-const CARD = "rounded-2xl border border-[#E7E3DC] bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)]";
+const CARD = "rounded-2xl border border-[var(--border-warm)] bg-[var(--bg-surface)] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)]";
 const ICON_BOX = "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F3F4F6]";
 const ICON = "h-[18px] w-[18px] text-[var(--text-secondary)]";
 const CARD_TITLE = "text-[14px] font-semibold text-[var(--text-primary)] leading-tight";
 const CARD_DESC = "mt-1 text-[13px] text-[var(--text-tertiary)] leading-relaxed";
-const PRIMARY_BTN = "inline-flex items-center gap-2 rounded-[var(--radius-button)] bg-[var(--accent-primary)] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#1F2937] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 transition-all duration-150 ease-out shadow-[var(--shadow-xs)]";
-const TEXTAREA = "w-full rounded-xl border border-[#E7E3DC] bg-white px-4 py-3 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 focus:border-[var(--text-tertiary)] resize-none transition-all duration-150 ease-out leading-relaxed";
+const PRIMARY_BTN = "inline-flex items-center gap-2 rounded-[var(--radius-button)] bg-[var(--accent-primary)] px-4 py-2 text-[13px] font-medium text-white hover:bg-[var(--accent-primary-hover)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 transition-all duration-150 ease-out shadow-[var(--shadow-xs)]";
+const TEXTAREA = "w-full rounded-xl border border-[var(--border-warm)] bg-[var(--bg-surface)] px-4 py-3 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 focus:border-[var(--text-tertiary)] resize-none transition-all duration-150 ease-out leading-relaxed";
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -82,7 +82,7 @@ function ToneSelector({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((p) => !p)}
-        className="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--border-default)] bg-white px-4 py-2.5 text-[13px] text-[var(--text-primary)] transition-all duration-150 ease-out hover:border-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] px-4 py-2.5 text-[13px] text-[var(--text-primary)] transition-all duration-150 ease-out hover:border-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 disabled:cursor-not-allowed disabled:opacity-40"
       >
         <div className="text-left">
           <span className="font-medium">{selected.label}</span>
@@ -97,7 +97,7 @@ function ToneSelector({
         <>
           {/* Backdrop to close */}
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-xl border border-[var(--border-default)] bg-white shadow-[var(--shadow-dropdown)]">
+          <div className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-[var(--shadow-dropdown)]">
             {TONE_OPTIONS.map((opt) => (
               <button
                 key={opt.value}

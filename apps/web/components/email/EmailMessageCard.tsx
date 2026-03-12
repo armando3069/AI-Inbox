@@ -31,7 +31,7 @@ export function EmailMessageCard({ message, index = 0 }: EmailMessageCardProps) 
         "rounded-2xl border overflow-hidden transition-shadow duration-200",
         isOutgoing
           ? "border-[#E7E3DC] bg-[#FAFAF9] shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
-          : "border-[#E7E3DC] bg-white shadow-[0_1px_4px_rgba(0,0,0,0.05)]",
+          : "border-[#E7E3DC] bg-[var(--bg-surface)] shadow-[0_1px_4px_rgba(0,0,0,0.05)]",
         isFirst && !isOutgoing
           ? "shadow-[0_2px_8px_rgba(0,0,0,0.07)]"
           : "",

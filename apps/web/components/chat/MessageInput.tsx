@@ -86,7 +86,7 @@ export function MessageInput({
   };
 
   return (
-    <div ref={wrapperRef} className="px-5 py-4 border-t border-[var(--border-default)] bg-white">
+    <div ref={wrapperRef} className="px-5 py-4 border-t border-[var(--border-default)] bg-[var(--bg-surface)]">
       {/* Suggestions panel — smooth collapse/expand */}
       <div
         className={`overflow-hidden transition-all duration-200 ease-in-out ${
@@ -121,7 +121,7 @@ export function MessageInput({
               }
             }}
             placeholder="Scrie un mesaj..."
-            className="w-full min-h-[44px] p-3 pr-10 border border-[var(--border-default)] rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 focus:border-[var(--text-tertiary)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] text-[14px] leading-relaxed transition-all duration-120 ease-out"
+            className="w-full min-h-[44px] p-3 pr-10 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 focus:border-[var(--text-tertiary)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] text-[14px] leading-relaxed transition-all duration-120 ease-out"
             rows={2}
           />
 
@@ -156,7 +156,7 @@ export function MessageInput({
         </div>
 
         <button
-          className="p-2.5 bg-[var(--accent-primary)] hover:bg-[#1F2937] text-white rounded-xl transition-all duration-120 ease-out active:scale-[0.96] shadow-[var(--shadow-xs)] flex-shrink-0"
+          className="p-2.5 bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-white rounded-xl transition-all duration-120 ease-out active:scale-[0.96] shadow-[var(--shadow-xs)] flex-shrink-0"
           onClick={onSend}
         >
           <Send className="w-[18px] h-[18px]" />

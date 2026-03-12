@@ -78,7 +78,7 @@ export function AvatarWithPlatformBadge({
 
       {/* Platform badge */}
       <div
-        className={`absolute -bottom-0.5 -right-0.5 ${s.badge} rounded-full bg-white ring-2 ring-white flex items-center justify-center`}
+        className={`absolute -bottom-0.5 -right-0.5 ${s.badge} rounded-full bg-[var(--bg-surface)] ring-2 ring-[var(--bg-surface)] flex items-center justify-center`}
       >
         <PlatformIcon platform={platform} className={s.icon} />
       </div>

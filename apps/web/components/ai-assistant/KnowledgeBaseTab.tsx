@@ -14,13 +14,13 @@ import type { UseKnowledgeBaseReturn } from "@/hooks/useKnowledgeBase";
 
 // ── Shared styles (must mirror ConfigurationTab tokens) ──────────────────────
 
-const CARD = "rounded-2xl border border-[#E7E3DC] bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)]";
+const CARD = "rounded-2xl border border-[var(--border-warm)] bg-[var(--bg-surface)] p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)]";
 const ICON_BOX = "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F3F4F6]";
 const ICON = "h-[18px] w-[18px] text-[var(--text-secondary)]";
 const CARD_TITLE = "text-[14px] font-semibold text-[var(--text-primary)] leading-tight";
 const CARD_DESC = "mt-1 text-[13px] text-[var(--text-tertiary)] leading-relaxed";
-const PRIMARY_BTN = "inline-flex items-center gap-2 rounded-[var(--radius-button)] bg-[var(--accent-primary)] px-4 py-2 text-[13px] font-medium text-white hover:bg-[#1F2937] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 transition-all duration-150 ease-out shadow-[var(--shadow-xs)]";
-const TEXTAREA = "w-full rounded-xl border border-[#E7E3DC] bg-white px-4 py-3 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 focus:border-[var(--text-tertiary)] resize-none transition-all duration-150 ease-out leading-relaxed";
+const PRIMARY_BTN = "inline-flex items-center gap-2 rounded-[var(--radius-button)] bg-[var(--accent-primary)] px-4 py-2 text-[13px] font-medium text-white hover:bg-[var(--accent-primary-hover)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 transition-all duration-150 ease-out shadow-[var(--shadow-xs)]";
+const TEXTAREA = "w-full rounded-xl border border-[var(--border-warm)] bg-[var(--bg-surface)] px-4 py-3 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 focus:border-[var(--text-tertiary)] resize-none transition-all duration-150 ease-out leading-relaxed";
 const TH_CELL = "px-5 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]";
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -70,7 +70,7 @@ export default function KnowledgeBaseTab({ kb }: KnowledgeBaseTabProps) {
             ? "cursor-wait border-[var(--text-tertiary)] bg-[var(--bg-surface-hover)]"
             : isDragging
             ? "border-[var(--text-tertiary)] bg-[var(--bg-surface-hover)]"
-            : "border-[var(--border-default)] bg-white hover:border-[var(--text-tertiary)] hover:bg-[var(--bg-surface-hover)]"
+            : "border-[var(--border-default)] bg-[var(--bg-surface)] hover:border-[var(--text-tertiary)] hover:bg-[var(--bg-surface-hover)]"
         }`}
       >
         <div className={ICON_BOX.replace("h-9 w-9", "h-11 w-11")}>
@@ -144,7 +144,7 @@ export default function KnowledgeBaseTab({ kb }: KnowledgeBaseTabProps) {
           Se încarcă fișierele…
         </div>
       ) : kbFiles.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[var(--border-default)] bg-white py-12 text-center">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[var(--border-default)] bg-[var(--bg-surface)] py-12 text-center">
           <div className={ICON_BOX.replace("h-9 w-9", "h-11 w-11")}>
             <FileText className="h-5 w-5 text-[var(--text-tertiary)]" />
           </div>
@@ -153,7 +153,7 @@ export default function KnowledgeBaseTab({ kb }: KnowledgeBaseTabProps) {
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-[var(--border-default)] bg-white">
+        <div className="overflow-hidden rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)]">
           {/* Header row */}
           <div className="flex items-center justify-between border-b border-[var(--border-default)] bg-[var(--bg-surface-hover)] px-5 py-2.5">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">

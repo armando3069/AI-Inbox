@@ -76,7 +76,7 @@ export function EditContactModal({
     <Dialog.Root open onOpenChange={(open) => { if (!open) onClose(); }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-50" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-sm bg-white rounded-[var(--radius-card)] shadow-[var(--shadow-dropdown)] focus:outline-none">
+        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-sm bg-[var(--bg-surface)] rounded-[var(--radius-card)] shadow-[var(--shadow-dropdown)] focus:outline-none">
           {/* Modal header */}
           <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]">
             <div>
@@ -130,7 +130,7 @@ export function EditContactModal({
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="px-4 py-2 text-[13px] bg-[var(--accent-primary)] text-white rounded-[var(--radius-button)] hover:bg-[#222] disabled:opacity-60 transition-colors"
+              className="px-4 py-2 text-[13px] bg-[var(--accent-primary)] text-white rounded-[var(--radius-button)] hover:bg-[var(--accent-primary-hover)] disabled:opacity-60 transition-colors"
             >
               {isSaving ? "Se salvează..." : "Salvează"}
             </button>

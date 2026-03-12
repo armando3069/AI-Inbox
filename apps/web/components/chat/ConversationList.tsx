@@ -36,7 +36,7 @@ export function ConversationList({
   const title = CATEGORY_LABELS[inboxCategory] ?? "Conversations";
 
   return (
-    <div className="w-80 border-r border-[var(--border-default)] flex flex-col bg-white flex-shrink-0 rounded-l-xl">
+    <div className="w-80 border-r border-[var(--border-default)] flex flex-col bg-[var(--bg-surface)] flex-shrink-0 rounded-l-xl">
       <div className="px-4 pt-4 pb-3">
         <h2 className="text-[15px] font-semibold text-[var(--text-primary)] tracking-tight mb-3">{title}</h2>
 
@@ -113,7 +113,7 @@ export function ConversationList({
               <button
                 onClick={(e) => { e.stopPropagation(); onUnarchive(conv.id); }}
                 title="Unarchive"
-                className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-120 p-1.5 rounded-md bg-white shadow-sm border border-[var(--border-default)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-120 p-1.5 rounded-md bg-[var(--bg-surface)] shadow-sm border border-[var(--border-default)] text-[var(--text-tertiary)] hover:text-[var(--accent-primary)]"
               >
                 <ArchiveRestore className="w-3.5 h-3.5" />
               </button>

@@ -17,7 +17,7 @@ export function EmailMetaHeader({ meta, isOutgoing, timestamp }: EmailMetaHeader
     <div
       className={[
         "px-6 pt-5 pb-4 border-b border-[#F0EFEC]",
-        isOutgoing ? "bg-[#F9F8F6]" : "bg-white",
+        isOutgoing ? "bg-[#F9F8F6]" : "bg-[var(--bg-surface)]",
       ].join(" ")}
     >
       {/* Subject — prominent */}
