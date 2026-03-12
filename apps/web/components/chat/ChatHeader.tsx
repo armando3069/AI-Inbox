@@ -26,7 +26,7 @@ export function ChatHeader({ conversation, onUpdateConversation, onArchive }: Ch
 
   return (
     <>
-      <div className="px-5 py-3 border-b border-[var(--border-default)] bg-white">
+      <div className="px-5 py-3 border-b border-[var(--border-default)] bg-[var(--bg-surface)]">
         <div className="flex items-center justify-between gap-3">
           {/* Left — avatar + name + platform */}
           <div className="flex items-center gap-3 min-w-0">
@@ -63,7 +63,7 @@ export function ChatHeader({ conversation, onUpdateConversation, onArchive }: Ch
             <button
               onClick={() => onArchive(conversation.id)}
               title="Archive conversation"
-              className="p-2 rounded-lg hover:bg-amber-50 text-[var(--text-tertiary)] hover:text-amber-600 transition-all duration-120 ease-out"
+              className="p-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 text-[var(--text-tertiary)] hover:text-amber-600 transition-all duration-120 ease-out"
             >
               <Archive className="w-4 h-4" />
             </button>

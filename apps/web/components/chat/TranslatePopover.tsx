@@ -74,7 +74,7 @@ export function TranslatePopover({ onSelect, onClose }: TranslatePopoverProps) {
   return (
     <div
       ref={containerRef}
-      className="w-56 bg-white border border-[var(--border-default)] rounded-[var(--radius-button)] shadow-[var(--shadow-dropdown)] overflow-hidden"
+      className="w-56 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[var(--radius-button)] shadow-[var(--shadow-dropdown)] overflow-hidden"
     >
       {/* Search */}
       <div className="p-2 border-b border-[var(--border-subtle)]">

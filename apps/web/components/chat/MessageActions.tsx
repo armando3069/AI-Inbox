@@ -51,7 +51,7 @@ export function MessageActions({ text, isTranslating, onTranslate }: MessageActi
     // It stays visible as long as the parent `group` is hovered.
     <div className="absolute right-0 bottom-full mb-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-120 ease-out">
       {/* Action chips */}
-      <div className="flex items-center gap-0.5 bg-white border border-[var(--border-default)] rounded-lg shadow-[var(--shadow-sm)] p-0.5">
+      <div className="flex items-center gap-0.5 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-lg shadow-[var(--shadow-sm)] p-0.5">
         {/* Copy */}
         <button
           onClick={handleCopy}

@@ -2,40 +2,56 @@
 
 import { type FormEvent, useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Loader2, Copy, Check, ArrowRight } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Copy,
+  Check,
+  ArrowRight,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getToken } from "@/services/auth/auth-service";
 import { platformsService } from "@/services/platforms/platforms.service";
 import type { PlatformAccount } from "@/services/platforms/platforms.types";
 
-// ── Style tokens ─────────────────────────────────────────────────────────────
+// ── Design tokens — mirrors ConfigurationTab / rest of the app ───────────────
+// All values use CSS variables so light / dark / system themes work automatically.
+// No hardcoded hex colours below this line.
 
-/** Card shell — warm border, barely-there shadow */
-const CARD = "rounded-2xl border border-[#E7E3DC] bg-white shadow-[0_1px_4px_rgba(0,0,0,0.04)]";
+/** Card surface — same family as AI-Assistant / Contacts cards */
+const CARD =
+  "rounded-2xl border border-[var(--border-warm)] bg-[var(--bg-surface)] shadow-[var(--shadow-card)]";
 
-/** Icon container — neutral, consistent across every surface */
+/** Icon container — same as ConfigurationTab icon boxes */
 const ICON_BOX =
-  "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F3F4F6]";
+  "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--bg-surface-hover)]";
 
-/** Form input — off-white resting state, white focused, premium ring */
+/** Text input / select — theme-aware */
 const INPUT =
-  "w-full rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-4 py-3 text-[13px] text-[#111827] placeholder-[#9CA3AF]" +
-  " focus:outline-none focus:ring-2 focus:ring-[#111827]/8 focus:border-[#9CA3AF] focus:bg-white" +
+  "w-full rounded-[var(--radius-input)] border border-[var(--border-default)] bg-[var(--bg-page)]" +
+  " px-4 py-2.5 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)]" +
+  " focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/10 focus:border-[var(--text-secondary)]" +
   " transition-all duration-150 ease-out leading-snug";
 
-/** Standard field label */
-const LABEL = "block text-[13px] font-medium text-[#374151]";
+/** Field label */
+const LABEL = "block text-[13px] font-medium text-[var(--text-secondary)]";
 
-/** Primary CTA — dark, confident */
+/** Primary CTA — uses accent-primary from the theme system */
 const PRIMARY_BTN =
-  "w-full inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#111827] py-3 text-[13px] font-semibold text-white" +
-  " hover:bg-[#1a2232] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40" +
-  " transition-all duration-150 ease-out shadow-[0_1px_3px_rgba(0,0,0,0.14)]";
+  "w-full inline-flex items-center justify-center gap-2 rounded-[var(--radius-button)]" +
+  " bg-[var(--accent-primary)] py-2.5 text-[13px] font-medium text-white" +
+  " hover:bg-[var(--accent-primary-hover)] active:scale-[0.98]" +
+  " disabled:cursor-not-allowed disabled:opacity-40" +
+  " transition-all duration-150 ease-out shadow-[var(--shadow-xs)]";
 
-/** Section label — spaced caps */
-const SECTION_LABEL = "text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9CA3AF]";
+/** Small uppercase section label */
+const SECTION_LABEL =
+  "text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]";
 
-// ── Platform config ─────────────────────────────────────────────────────────
+// ── Platform config ───────────────────────────────────────────────────────────
 
 type PlatformStatus = "available" | "coming-soon";
 
@@ -45,7 +61,7 @@ interface PlatformConfig {
   description: string;
   icon: React.ReactNode;
   status: PlatformStatus;
-  accentColor: string;
+  iconClass: string;
 }
 
 const PLATFORMS: PlatformConfig[] = [
@@ -55,7 +71,7 @@ const PLATFORMS: PlatformConfig[] = [
     description: "Conectează-ți botul de suport sau vânzări.",
     icon: <TelegramIcon />,
     status: "available",
-    accentColor: "text-sky-500",
+    iconClass: "text-sky-500 dark:text-sky-400",
   },
   {
     id: "whatsapp",
@@ -63,7 +79,7 @@ const PLATFORMS: PlatformConfig[] = [
     description: "Conectează contul tău WhatsApp Business.",
     icon: <WhatsAppIcon />,
     status: "available",
-    accentColor: "text-green-500",
+    iconClass: "text-emerald-600 dark:text-emerald-400",
   },
   {
     id: "email",
@@ -71,19 +87,11 @@ const PLATFORMS: PlatformConfig[] = [
     description: "Conectează Gmail sau Outlook cu parola de aplicație.",
     icon: <EmailIcon />,
     status: "available",
-    accentColor: "text-orange-500",
-  },
-  {
-    id: "teams",
-    label: "Microsoft Teams",
-    description: "Integrează cu Microsoft Teams pentru echipa ta.",
-    icon: <TeamsIcon />,
-    status: "coming-soon",
-    accentColor: "text-indigo-500",
+    iconClass: "text-orange-500 dark:text-orange-400",
   },
 ];
 
-// ── Step indicator (pure display) ─────────────────────────────────────────────
+// ── Step indicator ────────────────────────────────────────────────────────────
 
 type StepState = "active" | "completed" | "upcoming";
 
@@ -98,13 +106,18 @@ function StepItem({
 }) {
   return (
     <div className="flex items-center gap-2.5">
-      {/* Circle */}
       <span
         className={[
           "h-6 w-6 rounded-full flex items-center justify-center shrink-0 text-[11px] font-bold transition-all duration-200",
-          state === "active" ? "bg-[#111827] text-white" : "",
-          state === "completed" ? "bg-[#ECFDF5] text-[#047857]" : "",
-          state === "upcoming" ? "bg-[#F3F4F6] text-[#9CA3AF]" : "",
+          state === "active"
+            ? "bg-[var(--accent-primary)] text-white"
+            : "",
+          state === "completed"
+            ? "bg-emerald-500 text-white dark:bg-emerald-600"
+            : "",
+          state === "upcoming"
+            ? "bg-[var(--bg-surface-hover)] text-[var(--text-tertiary)] border border-[var(--border-default)]"
+            : "",
         ]
           .filter(Boolean)
           .join(" ")}
@@ -112,13 +125,12 @@ function StepItem({
         {state === "completed" ? <Check className="h-3 w-3" /> : number}
       </span>
 
-      {/* Label */}
       <span
         className={[
           "text-[13px] transition-colors duration-200",
-          state === "active" ? "font-semibold text-[#111827]" : "",
-          state === "completed" ? "font-medium text-[#047857]" : "",
-          state === "upcoming" ? "text-[#9CA3AF]" : "",
+          state === "active"    ? "font-semibold text-[var(--text-primary)]" : "",
+          state === "completed" ? "font-medium text-emerald-600 dark:text-emerald-400" : "",
+          state === "upcoming"  ? "text-[var(--text-tertiary)]" : "",
         ]
           .filter(Boolean)
           .join(" ")}
@@ -129,24 +141,24 @@ function StepItem({
   );
 }
 
-// ── Inner page (reads search params) ─────────────────────────────────────────
+// ── Inner page ────────────────────────────────────────────────────────────────
 
 function ConnectPlatformsContent() {
-  const router = useRouter();
+  const router       = useRouter();
   const searchParams = useSearchParams();
-  const isManaging = searchParams.get("manage") === "1";
+  const isManaging   = searchParams.get("manage") === "1";
   const { isLoading: isAuthLoading } = useAuth();
 
   const [isCheckingPlatforms, setIsCheckingPlatforms] = useState(true);
   const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set());
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId]     = useState<string | null>(null);
 
   // Telegram fields
   const [tgBotToken, setTgBotToken] = useState("");
 
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast]               = useState<string | null>(null);
 
   const platformsChecked = useRef(false);
 
@@ -180,20 +192,20 @@ function ConnectPlatformsContent() {
   }, [isAuthLoading, isManaging, router]);
 
   // WhatsApp fields
-  const [waAccessToken, setWaAccessToken] = useState("");
+  const [waAccessToken, setWaAccessToken]     = useState("");
   const [waPhoneNumberId, setWaPhoneNumberId] = useState("");
 
   // Email fields
-  const [emEmail, setEmEmail] = useState("");
-  const [emPassword, setEmPassword] = useState("");
-  const [emProvider, setEmProvider] = useState<"gmail" | "outlook" | "custom">("gmail");
+  const [emEmail, setEmEmail]               = useState("");
+  const [emPassword, setEmPassword]         = useState("");
+  const [emProvider, setEmProvider]         = useState<"gmail" | "outlook" | "custom">("gmail");
   const [emShowAdvanced, setEmShowAdvanced] = useState(false);
-  const [emImapHost, setEmImapHost] = useState("");
-  const [emImapPort, setEmImapPort] = useState("993");
-  const [emImapSecure, setEmImapSecure] = useState(true);
-  const [emSmtpHost, setEmSmtpHost] = useState("");
-  const [emSmtpPort, setEmSmtpPort] = useState("587");
-  const [emSmtpSecure, setEmSmtpSecure] = useState(false);
+  const [emImapHost, setEmImapHost]         = useState("");
+  const [emImapPort, setEmImapPort]         = useState("993");
+  const [emImapSecure, setEmImapSecure]     = useState(true);
+  const [emSmtpHost, setEmSmtpHost]         = useState("");
+  const [emSmtpPort, setEmSmtpPort]         = useState("587");
+  const [emSmtpSecure, setEmSmtpSecure]     = useState(false);
 
   const handleCardClick = (platform: PlatformConfig) => {
     if (platform.status !== "available") return;
@@ -263,7 +275,7 @@ function ConnectPlatformsContent() {
     setIsConnecting(true);
     try {
       const payload: Parameters<typeof platformsService.connectEmail>[0] = {
-        email: emEmail.trim(),
+        email:    emEmail.trim(),
         password: emPassword,
         provider: emProvider,
       };
@@ -271,15 +283,15 @@ function ConnectPlatformsContent() {
       if (emProvider === "custom" || emShowAdvanced) {
         if (emImapHost.trim()) {
           payload.imapOverride = {
-            host: emImapHost.trim(),
-            port: parseInt(emImapPort, 10) || 993,
+            host:   emImapHost.trim(),
+            port:   parseInt(emImapPort, 10) || 993,
             secure: emImapSecure,
           };
         }
         if (emSmtpHost.trim()) {
           payload.smtpOverride = {
-            host: emSmtpHost.trim(),
-            port: parseInt(emSmtpPort, 10) || 587,
+            host:   emSmtpHost.trim(),
+            port:   parseInt(emSmtpPort, 10) || 587,
             secure: emSmtpSecure,
           };
         }
@@ -305,16 +317,16 @@ function ConnectPlatformsContent() {
   if (isAuthLoading || isCheckingPlatforms) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-[#9CA3AF]" />
+        <Loader2 className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden rounded-xl bg-white shadow-[var(--shadow-card)] border border-[var(--border-default)]">
+    <div className="flex-1 flex flex-col overflow-hidden rounded-xl bg-[var(--bg-surface)] shadow-[var(--shadow-card)] border border-[var(--border-default)]">
       {/* ── Toast ── */}
       {toast && (
-        <div className="fixed top-5 right-5 z-50 flex items-center gap-2.5 rounded-2xl bg-[#047857] px-4 py-3 text-[13px] font-medium text-white shadow-[0_8px_24px_rgba(4,120,87,0.25)]">
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] font-medium text-emerald-700 shadow-[var(--shadow-dropdown)] dark:border-emerald-900/50 dark:bg-emerald-950/50 dark:text-emerald-400">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           {toast}
         </div>
@@ -325,48 +337,41 @@ function ConnectPlatformsContent() {
 
           {/* ── Page header ──────────────────────────────────────────── */}
           <div className="mb-7">
-            <h1 className="text-[20px] font-semibold text-[#111827] tracking-tight leading-none">
+            <h1 className="text-[20px] font-semibold text-[var(--text-primary)] tracking-tight leading-none">
               {isManaging ? "Gestionează platformele" : "Conectează-ți prima platformă"}
             </h1>
-            <p className="mt-1.5 text-[13px] text-[#6B7280] leading-relaxed">
+            <p className="mt-1.5 text-[13px] text-[var(--text-secondary)] leading-relaxed">
               {isManaging
                 ? "Adaugă sau gestionează canalele de comunicare conectate."
                 : "Alege canalul de comunicare pe care vrei să-l gestionezi."}
             </p>
           </div>
 
-          {/* ── Step flow ────────────────────────────────────────────── */}
+          {/* ── Step flow ─────────────────────────────────────────────── */}
           <div className="mb-8 flex items-center gap-3">
             <StepItem
               number={1}
               label="Alege platforma"
               state={currentStep > 1 ? "completed" : "active"}
             />
-
-            {/* Connector */}
-            <div className="w-8 h-px bg-[#E5E7EB]" />
-
+            <div className="w-8 h-px bg-[var(--border-default)]" />
             <StepItem
               number={2}
               label="Conectează"
               state={currentStep === 2 ? "active" : "upcoming"}
             />
-
-            {/* Connector */}
-            <div className="w-8 h-px bg-[#E5E7EB]" />
-
+            <div className="w-8 h-px bg-[var(--border-default)]" />
             <StepItem number={3} label="Configurează" state="upcoming" />
           </div>
 
-          {/* ── Two-column layout ─────────────────────────────────────── */}
-          <div className="flex flex-col gap-10 lg:flex-row lg:items-start">
+          {/* ── Two-column layout ──────────────────────────────────────── */}
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.2fr_1fr] lg:items-start">
 
-            {/* ── LEFT: Platform cards ──────────────────────────────── */}
+            {/* ── LEFT: Platform grid ──────────────────────────────── */}
             <div className="flex-1 min-w-0 space-y-3">
               <p className={SECTION_LABEL}>Platforme disponibile</p>
 
-              {/* Available platforms — 2-column grid */}
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {PLATFORMS.filter((p) => p.status === "available").map((platform) => (
                   <PlatformCard
                     key={platform.id}
@@ -377,18 +382,6 @@ function ConnectPlatformsContent() {
                   />
                 ))}
               </div>
-
-              {/* Coming soon — full-width horizontal strip */}
-              {PLATFORMS.filter((p) => p.status === "coming-soon").length > 0 && (
-                <div className="pt-1 space-y-2">
-                  <p className={SECTION_LABEL}>Em curând</p>
-                  <div className="space-y-3">
-                    {PLATFORMS.filter((p) => p.status === "coming-soon").map((platform) => (
-                      <ComingSoonCard key={platform.id} platform={platform} />
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* ── RIGHT: Configuration panel ────────────────────────── */}
@@ -462,7 +455,7 @@ export default function ConnectPlatformsPage() {
     <Suspense
       fallback={
         <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-[#9CA3AF]" />
+          <Loader2 className="h-5 w-5 animate-spin text-[var(--text-tertiary)]" />
         </div>
       }
     >
@@ -471,7 +464,7 @@ export default function ConnectPlatformsPage() {
   );
 }
 
-// ── PlatformCard ─────────────────────────────────────────────────────────────
+// ── PlatformCard ──────────────────────────────────────────────────────────────
 
 function PlatformCard({
   platform,
@@ -492,67 +485,67 @@ function PlatformCard({
       onClick={onClick}
       disabled={!clickable}
       className={[
-        // Base
-        "group relative w-full rounded-2xl border p-6 text-left transition-all duration-200 ease-out overflow-hidden",
+        // Base shell — same card family as the rest of the app
+        "group relative w-full rounded-2xl border p-5 text-left transition-all duration-150 ease-out overflow-hidden",
+        "bg-[var(--bg-surface)] border-[var(--border-warm)]",
 
-        // Resting — warm border, very subtle shadow
-        "border-[#E7E3DC] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]",
-
-        // Clickable hover — lift + warmer border
+        // Hover — subtle lift with soft border change
         clickable && !isSelected
-          ? "cursor-pointer hover:border-[#CEC9C1] hover:bg-[#FAFAF9] hover:shadow-[0_4px_12px_rgba(0,0,0,0.07)]"
+          ? "cursor-pointer hover:bg-[var(--bg-surface-hover)] hover:border-[var(--border-default)] hover:shadow-[var(--shadow-sm)]"
           : "",
 
-        // Selected — elevated, confident
+        // Selected — accent border + very light ring, matching the app's selected-state language
         isSelected
-          ? "border-[#111827]/18 bg-[#FAFAFA] shadow-[0_4px_14px_rgba(0,0,0,0.09)] cursor-default"
+          ? "border-[var(--accent-primary)] ring-2 ring-[var(--accent-primary)]/10 shadow-[var(--shadow-sm)] cursor-default"
           : "",
 
-        // Connected — success tint, non-interactive
-        isConnected && !isSelected
-          ? "cursor-default border-[#D1FAE5] bg-[#F0FDF4]/60"
-          : "",
+        // Connected — gently muted, not distracting
+        isConnected && !isSelected ? "cursor-default opacity-75" : "",
       ]
         .filter(Boolean)
         .join(" ")}
     >
-      {/* ── Selection accent — top edge bar ── */}
+      {/* Selected top accent bar */}
       {isSelected && (
-        <div className="absolute inset-x-0 top-0 h-[3px] rounded-t-2xl bg-[#111827]" />
+        <div className="absolute inset-x-0 top-0 h-[2px] rounded-t-2xl bg-[var(--accent-primary)]" />
       )}
 
-      {/* ── Status badges ── */}
-      {isConnected ? (
-        <span className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-[#ECFDF5] border border-[#D1FAE5] px-2.5 py-1 text-[11px] font-semibold text-[#047857]">
+      {/* Connected top accent bar — soft green */}
+      {isConnected && !isSelected && (
+        <div className="absolute inset-x-0 top-0 h-[2px] rounded-t-2xl bg-emerald-500 dark:bg-emerald-600" />
+      )}
+
+      {/* Connected badge — same soft semantic color as lifecycle badges */}
+      {isConnected && (
+        <span className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/50 dark:text-emerald-400">
           <CheckCircle2 className="h-3 w-3" />
           Conectat
         </span>
-      ) : null}
+      )}
 
-      {/* ── Icon ── */}
-      <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[#F3F4F6] transition-colors duration-200 group-hover:bg-[#EDEDEB]">
-        <span className={platform.accentColor}>{platform.icon}</span>
+      {/* Icon box — same style as ConfigurationTab icon boxes */}
+      <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--bg-surface-hover)] transition-colors duration-200 group-hover:bg-[var(--border-subtle)]">
+        <span className={platform.iconClass}>{platform.icon}</span>
       </div>
 
-      {/* ── Content ── */}
+      {/* Content */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[14px] font-semibold text-[#111827] leading-tight">
+          <p className="text-[14px] font-semibold text-[var(--text-primary)] leading-tight">
             {platform.label}
           </p>
-          <p className="mt-2 text-[13px] text-[#6B7280] leading-relaxed">
+          <p className="mt-1 text-[12px] text-[var(--text-secondary)] leading-relaxed">
             {platform.description}
           </p>
         </div>
 
-        {/* Arrow — appears on hover for clickable cards */}
         {clickable && (
           <ArrowRight
             className={[
-              "h-4 w-4 shrink-0 mt-0.5 transition-all duration-200",
+              "h-4 w-4 shrink-0 mt-0.5 transition-all duration-200 text-[var(--text-tertiary)]",
               isSelected
-                ? "text-[#111827] opacity-60"
-                : "text-[#D1D5DB] opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5",
+                ? "opacity-70"
+                : "opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5",
             ].join(" ")}
           />
         )}
@@ -561,54 +554,35 @@ function PlatformCard({
   );
 }
 
-// ── Coming soon strip card ─────────────────────────────────────────────────────
-
-function ComingSoonCard({ platform }: { platform: PlatformConfig }) {
-  return (
-    <div className="flex items-center gap-4 rounded-2xl border border-[#E7E3DC] bg-[#FAFAF9] px-5 py-4 opacity-60">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F3F4F6]">
-        <span className={platform.accentColor}>{platform.icon}</span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold text-[#111827]">{platform.label}</p>
-        <p className="mt-0.5 text-[12px] text-[#9CA3AF]">{platform.description}</p>
-      </div>
-      <span className="shrink-0 rounded-full bg-[#F3F4F6] border border-[#E5E7EB] px-2.5 py-1 text-[11px] font-semibold text-[#9CA3AF]">
-        Em curând
-      </span>
-    </div>
-  );
-}
-
 // ── Empty config panel ────────────────────────────────────────────────────────
 
 function EmptyConfigPanel() {
   return (
-    <div className="flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#E5E7EB] bg-[#FAFAFA] px-8 py-12 text-center">
-      {/* Platform icon trio */}
-      <div className="mb-6 flex items-center gap-2">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F3F4F6] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-          <span className="text-sky-400"><TelegramIcon /></span>
+    <div className="flex min-h-[340px] flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--border-default)] bg-[var(--bg-surface-hover)]/50 px-8 py-12 text-center">
+      {/* Platform icon trio — cards-in-cards, same depth language */}
+      <div className="mb-5 flex items-center gap-2">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-warm)] bg-[var(--bg-surface)] shadow-[var(--shadow-sm)]">
+          <span className="text-sky-500 dark:text-sky-400"><TelegramIcon /></span>
         </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#F3F4F6] shadow-[0_2px_6px_rgba(0,0,0,0.08)] ring-2 ring-white">
-          <span className="text-green-400"><WhatsAppIcon /></span>
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--border-warm)] bg-[var(--bg-surface)] shadow-[var(--shadow-card)]">
+          <span className="text-emerald-600 dark:text-emerald-400"><WhatsAppIcon /></span>
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F3F4F6] shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-          <span className="text-indigo-400"><TeamsIcon /></span>
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-warm)] bg-[var(--bg-surface)] shadow-[var(--shadow-sm)]">
+          <span className="text-orange-500 dark:text-orange-400"><EmailIcon /></span>
         </div>
       </div>
 
-      <p className="text-[14px] font-semibold text-[#374151] leading-tight">
+      <p className="text-[14px] font-semibold text-[var(--text-primary)] leading-tight">
         Nicio platformă selectată
       </p>
-      <p className="mt-2 max-w-[220px] text-[13px] text-[#9CA3AF] leading-relaxed">
-        Alege Telegram, WhatsApp sau Email din stânga pentru a începe configurarea.
+      <p className="mt-2 max-w-[220px] text-[13px] text-[var(--text-secondary)] leading-relaxed">
+        Alege o platformă din stânga pentru a configura integrarea.
       </p>
     </div>
   );
 }
 
-// ── Telegram connect form ─────────────────────────────────────────────────────
+// ── Telegram form ─────────────────────────────────────────────────────────────
 
 function TelegramForm({
   botToken,
@@ -626,17 +600,15 @@ function TelegramForm({
   return (
     <div className={`${CARD} p-6`}>
       {/* Header */}
-      <div className="flex items-start gap-4 pb-5 border-b border-[#F3F4F6]">
+      <div className="flex items-start gap-3 pb-5 border-b border-[var(--border-subtle)]">
         <div className={ICON_BOX}>
-          <span className="text-sky-500">
-            <TelegramIcon />
-          </span>
+          <span className="text-sky-500 dark:text-sky-400"><TelegramIcon /></span>
         </div>
         <div className="min-w-0">
-          <h2 className="text-[15px] font-semibold text-[#111827] leading-tight">
+          <h2 className="text-[15px] font-semibold text-[var(--text-primary)] leading-tight">
             Conectează Telegram
           </h2>
-          <p className="mt-1 text-[13px] text-[#6B7280] leading-relaxed">
+          <p className="mt-0.5 text-[13px] text-[var(--text-secondary)] leading-relaxed">
             Introdu token-ul botului tău Telegram
           </p>
         </div>
@@ -658,10 +630,10 @@ function TelegramForm({
             autoFocus
             className={INPUT}
           />
-          <p className="text-[12px] text-[#9CA3AF] leading-relaxed">
+          <p className="text-[12px] text-[var(--text-tertiary)] leading-relaxed">
             Obține token-ul de la{" "}
-            <span className="font-semibold text-[#6B7280]">@BotFather</span> cu comanda{" "}
-            <code className="rounded-md bg-[#F3F4F6] px-1.5 py-0.5 text-[11px] font-mono text-[#374151]">
+            <span className="font-semibold text-[var(--text-secondary)]">@BotFather</span> cu comanda{" "}
+            <code className="rounded border border-[var(--border-default)] bg-[var(--bg-surface-hover)] px-1.5 py-0.5 text-[11px] font-mono text-[var(--text-primary)]">
               /newbot
             </code>
             .
@@ -669,7 +641,7 @@ function TelegramForm({
         </div>
 
         {error && (
-          <div className="flex items-start gap-3 rounded-xl border border-red-200/60 bg-red-50/60 px-4 py-3 text-[13px] text-red-600">
+          <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-600 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-400">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             {error}
           </div>
@@ -690,7 +662,7 @@ function TelegramForm({
   );
 }
 
-// ── WhatsApp connect form ─────────────────────────────────────────────────────
+// ── WhatsApp form ─────────────────────────────────────────────────────────────
 
 const WHATSAPP_VERIFY_TOKEN =
   process.env.NEXT_PUBLIC_WHATSAPP_VERIFY_TOKEN ?? "zottis_verify_token";
@@ -710,11 +682,11 @@ function CopyField({ label, value }: { label: string; value: string }) {
 
   return (
     <div className="space-y-1.5">
-      <p className="text-[12px] font-semibold text-[#9CA3AF] uppercase tracking-[0.06em]">
+      <p className="text-[12px] font-semibold text-[var(--text-tertiary)] uppercase tracking-[0.06em]">
         {label}
       </p>
-      <div className="flex items-center gap-2 rounded-xl border border-[#E5E7EB] bg-[#F9FAFB] px-3.5 py-2.5">
-        <code className="flex-1 min-w-0 truncate text-[12px] font-mono text-[#374151] leading-snug">
+      <div className="flex items-center gap-2 rounded-[var(--radius-input)] border border-[var(--border-default)] bg-[var(--bg-page)] px-3.5 py-2.5">
+        <code className="flex-1 min-w-0 truncate text-[12px] font-mono text-[var(--text-primary)] leading-snug">
           {value}
         </code>
         <button
@@ -723,28 +695,20 @@ function CopyField({ label, value }: { label: string; value: string }) {
           className={[
             "shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition-all duration-150 ease-out",
             copied
-              ? "bg-[#ECFDF5] text-[#047857]"
-              : "text-[#9CA3AF] hover:text-[#374151] hover:bg-white hover:shadow-[0_1px_3px_rgba(0,0,0,0.08)]",
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
+              : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface-hover)]",
           ].join(" ")}
         >
           {copied ? (
-            <>
-              <Check className="h-3 w-3" />
-              Copiat
-            </>
+            <><Check className="h-3 w-3" />Copiat</>
           ) : (
-            <>
-              <Copy className="h-3 w-3" />
-              Copiază
-            </>
+            <><Copy className="h-3 w-3" />Copiază</>
           )}
         </button>
       </div>
     </div>
   );
 }
-
-// ── WhatsApp form ─────────────────────────────────────────────────────────────
 
 function WhatsappForm({
   accessToken,
@@ -767,29 +731,23 @@ function WhatsappForm({
     <div className="space-y-4">
       {/* ── Credentials card ── */}
       <div className={`${CARD} p-6`}>
-        {/* Header */}
-        <div className="flex items-start gap-4 pb-5 border-b border-[#F3F4F6]">
+        <div className="flex items-start gap-3 pb-5 border-b border-[var(--border-subtle)]">
           <div className={ICON_BOX}>
-            <span className="text-green-500">
-              <WhatsAppIcon />
-            </span>
+            <span className="text-emerald-600 dark:text-emerald-400"><WhatsAppIcon /></span>
           </div>
           <div className="min-w-0">
-            <h2 className="text-[15px] font-semibold text-[#111827] leading-tight">
+            <h2 className="text-[15px] font-semibold text-[var(--text-primary)] leading-tight">
               Conectează WhatsApp
             </h2>
-            <p className="mt-1 text-[13px] text-[#6B7280] leading-relaxed">
+            <p className="mt-0.5 text-[13px] text-[var(--text-secondary)] leading-relaxed">
               WhatsApp Business Cloud API
             </p>
           </div>
         </div>
 
-        {/* Form */}
         <form onSubmit={onSubmit} className="mt-5 space-y-4">
           <div className="space-y-2">
-            <label htmlFor="wa-token" className={LABEL}>
-              Access Token
-            </label>
+            <label htmlFor="wa-token" className={LABEL}>Access Token</label>
             <input
               id="wa-token"
               type="password"
@@ -803,9 +761,7 @@ function WhatsappForm({
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="wa-phone-id" className={LABEL}>
-              Phone Number ID
-            </label>
+            <label htmlFor="wa-phone-id" className={LABEL}>Phone Number ID</label>
             <input
               id="wa-phone-id"
               type="text"
@@ -818,7 +774,7 @@ function WhatsappForm({
           </div>
 
           {error && (
-            <div className="flex items-start gap-3 rounded-xl border border-red-200/60 bg-red-50/60 px-4 py-3 text-[13px] text-red-600">
+            <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-600 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-400">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               {error}
             </div>
@@ -839,42 +795,41 @@ function WhatsappForm({
 
       {/* ── Webhook configuration card ── */}
       <div className={`${CARD} p-6`}>
-        {/* Header */}
         <div className="mb-5">
-          <p className="text-[13px] font-semibold text-[#111827]">Configurare Webhook</p>
-          <p className="mt-0.5 text-[12px] text-[#9CA3AF] leading-relaxed">
+          <p className="text-[13px] font-semibold text-[var(--text-primary)]">Configurare Webhook</p>
+          <p className="mt-0.5 text-[12px] text-[var(--text-secondary)] leading-relaxed">
             Configurează webhook-ul în Meta Developer Portal.
           </p>
         </div>
 
-        {/* Copy fields */}
         <div className="space-y-4">
           <CopyField label="Callback URL" value={WHATSAPP_WEBHOOK_URL} />
           <CopyField label="Verify Token" value={WHATSAPP_VERIFY_TOKEN} />
         </div>
 
-        {/* Instructions */}
-        <div className="mt-5 rounded-xl bg-[#F9FAFB] border border-[#F3F4F6] px-4 py-3.5">
-          <p className="text-[12px] font-semibold text-[#374151] mb-2">Pași de urmat</p>
-          <ol className="space-y-1.5 text-[12px] text-[#6B7280] leading-relaxed">
+        {/* Instructions — inset info block matching app's note-style surfaces */}
+        <div className="mt-5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-page)] px-4 py-4">
+          <p className="text-[12px] font-semibold text-[var(--text-secondary)] mb-2.5">Pași de urmat</p>
+          <ol className="space-y-2 text-[12px] text-[var(--text-tertiary)] leading-relaxed">
             <li className="flex gap-2">
-              <span className="shrink-0 font-semibold text-[#9CA3AF]">1.</span>
+              <span className="shrink-0 font-semibold text-[var(--accent-primary)]">1.</span>
               <span>
                 Meta Developer Portal → WhatsApp → Configuration → Webhook →{" "}
-                <span className="font-semibold text-[#374151]">Edit</span>
+                <span className="font-semibold text-[var(--text-secondary)]">Edit</span>
               </span>
             </li>
             <li className="flex gap-2">
-              <span className="shrink-0 font-semibold text-[#9CA3AF]">2.</span>
-              <span>Lipește URL-ul și token-ul de mai sus, apasă{" "}
-                <span className="font-semibold text-[#374151]">Verify and Save</span>
+              <span className="shrink-0 font-semibold text-[var(--accent-primary)]">2.</span>
+              <span>
+                Lipește URL-ul și token-ul de mai sus, apasă{" "}
+                <span className="font-semibold text-[var(--text-secondary)]">Verify and Save</span>
               </span>
             </li>
             <li className="flex gap-2">
-              <span className="shrink-0 font-semibold text-[#9CA3AF]">3.</span>
+              <span className="shrink-0 font-semibold text-[var(--accent-primary)]">3.</span>
               <span>
                 Abonează-te la evenimentul{" "}
-                <code className="rounded bg-white border border-[#E5E7EB] px-1.5 py-0.5 font-mono text-[11px] text-[#374151]">
+                <code className="rounded border border-[var(--border-default)] bg-[var(--bg-surface-hover)] px-1.5 py-0.5 font-mono text-[11px] text-[var(--text-primary)]">
                   messages
                 </code>
               </span>
@@ -886,12 +841,12 @@ function WhatsappForm({
   );
 }
 
-// ── Email connect form ────────────────────────────────────────────────────────
+// ── Email form ────────────────────────────────────────────────────────────────
 
 const EMAIL_PROVIDERS = [
-  { value: "gmail", label: "Gmail" },
+  { value: "gmail",   label: "Gmail" },
   { value: "outlook", label: "Outlook / Microsoft 365" },
-  { value: "custom", label: "Custom (IMAP/SMTP)" },
+  { value: "custom",  label: "Custom (IMAP/SMTP)" },
 ] as const;
 
 function EmailForm({
@@ -943,23 +898,21 @@ function EmailForm({
   error: string | null;
   onSubmit: (e: FormEvent) => void;
 }) {
-  const isCustom = provider === "custom";
+  const isCustom            = provider === "custom";
   const showAdvancedSection = showAdvanced || isCustom;
 
   return (
     <div className={`${CARD} p-6`}>
       {/* Header */}
-      <div className="flex items-start gap-4 pb-5 border-b border-[#F3F4F6]">
+      <div className="flex items-start gap-3 pb-5 border-b border-[var(--border-subtle)]">
         <div className={ICON_BOX}>
-          <span className="text-orange-500">
-            <EmailIcon />
-          </span>
+          <span className="text-orange-500 dark:text-orange-400"><EmailIcon /></span>
         </div>
         <div className="min-w-0">
-          <h2 className="text-[15px] font-semibold text-[#111827] leading-tight">
+          <h2 className="text-[15px] font-semibold text-[var(--text-primary)] leading-tight">
             Conectează Email
           </h2>
-          <p className="mt-1 text-[13px] text-[#6B7280] leading-relaxed">
+          <p className="mt-0.5 text-[13px] text-[var(--text-secondary)] leading-relaxed">
             IMAP + SMTP cu parolă de aplicație
           </p>
         </div>
@@ -970,9 +923,7 @@ function EmailForm({
 
         {/* Provider */}
         <div className="space-y-2">
-          <label htmlFor="em-provider" className={LABEL}>
-            Provider
-          </label>
+          <label htmlFor="em-provider" className={LABEL}>Provider</label>
           <select
             id="em-provider"
             value={provider}
@@ -980,7 +931,7 @@ function EmailForm({
             className={INPUT}
           >
             {EMAIL_PROVIDERS.map((p) => (
-              <option key={p.value} value={p.value}>
+              <option key={p.value} value={p.value} className="bg-[var(--bg-surface)]">
                 {p.label}
               </option>
             ))}
@@ -989,9 +940,7 @@ function EmailForm({
 
         {/* Email */}
         <div className="space-y-2">
-          <label htmlFor="em-email" className={LABEL}>
-            Adresă email
-          </label>
+          <label htmlFor="em-email" className={LABEL}>Adresă email</label>
           <input
             id="em-email"
             type="email"
@@ -1007,7 +956,11 @@ function EmailForm({
         {/* Password */}
         <div className="space-y-2">
           <label htmlFor="em-password" className={LABEL}>
-            {provider === "gmail" ? "Parolă de aplicație" : provider === "outlook" ? "Parolă cont / aplicație" : "Parolă"}
+            {provider === "gmail"
+              ? "Parolă de aplicație"
+              : provider === "outlook"
+              ? "Parolă cont / aplicație"
+              : "Parolă"}
           </label>
           <input
             id="em-password"
@@ -1019,34 +972,39 @@ function EmailForm({
             className={INPUT}
           />
           {provider === "gmail" && (
-            <p className="text-[12px] text-[#9CA3AF] leading-relaxed">
+            <p className="text-[12px] text-[var(--text-tertiary)] leading-relaxed">
               Generează o parolă de aplicație în{" "}
-              <span className="font-semibold text-[#6B7280]">Google Account → Security → App passwords</span>.
+              <span className="font-semibold text-[var(--text-secondary)]">
+                Google Account → Security → App passwords
+              </span>
+              .
             </p>
           )}
           {provider === "outlook" && (
-            <p className="text-[12px] text-[#9CA3AF] leading-relaxed">
+            <p className="text-[12px] text-[var(--text-tertiary)] leading-relaxed">
               Activează IMAP în setările Outlook și folosește parola contului.
             </p>
           )}
         </div>
 
-        {/* Advanced toggle (only for gmail/outlook; always shown for custom) */}
+        {/* Advanced toggle */}
         {!isCustom && (
           <button
             type="button"
             onClick={() => onShowAdvancedChange(!showAdvanced)}
-            className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[#6B7280] hover:text-[#111827] transition-colors duration-150"
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors duration-150"
           >
-            {showAdvanced ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            {showAdvanced
+              ? <ChevronUp className="h-3.5 w-3.5" />
+              : <ChevronDown className="h-3.5 w-3.5" />}
             Setări avansate IMAP/SMTP
           </button>
         )}
 
-        {/* Advanced section */}
+        {/* Advanced section — inset panel matching WhatsApp instructions block */}
         {showAdvancedSection && (
-          <div className="space-y-4 rounded-xl border border-[#F3F4F6] bg-[#FAFAFA] px-4 py-4">
-            <p className="text-[12px] font-semibold text-[#374151]">IMAP</p>
+          <div className="space-y-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-page)] px-4 py-4">
+            <p className="text-[12px] font-semibold text-[var(--text-secondary)]">IMAP</p>
             <div className="grid grid-cols-[1fr_80px_auto] gap-2 items-end">
               <div className="space-y-1.5">
                 <label className={LABEL}>Host</label>
@@ -1076,13 +1034,13 @@ function EmailForm({
                     id="imap-secure"
                     checked={imapSecure}
                     onChange={(e) => onImapSecureChange(e.target.checked)}
-                    className="h-4 w-4 rounded border-[#E5E7EB] text-[#111827] cursor-pointer"
+                    className="h-4 w-4 rounded border-[var(--border-default)] cursor-pointer accent-[var(--accent-primary)]"
                   />
                 </div>
               </div>
             </div>
 
-            <p className="text-[12px] font-semibold text-[#374151] pt-1">SMTP</p>
+            <p className="text-[12px] font-semibold text-[var(--text-secondary)] pt-1">SMTP</p>
             <div className="grid grid-cols-[1fr_80px_auto] gap-2 items-end">
               <div className="space-y-1.5">
                 <label className={LABEL}>Host</label>
@@ -1112,7 +1070,7 @@ function EmailForm({
                     id="smtp-secure"
                     checked={smtpSecure}
                     onChange={(e) => onSmtpSecureChange(e.target.checked)}
-                    className="h-4 w-4 rounded border-[#E5E7EB] text-[#111827] cursor-pointer"
+                    className="h-4 w-4 rounded border-[var(--border-default)] cursor-pointer accent-[var(--accent-primary)]"
                   />
                 </div>
               </div>
@@ -1121,7 +1079,7 @@ function EmailForm({
         )}
 
         {error && (
-          <div className="flex items-start gap-3 rounded-xl border border-red-200/60 bg-red-50/60 px-4 py-3 text-[13px] text-red-600">
+          <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-600 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-400">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             {error}
           </div>
@@ -1170,21 +1128,6 @@ function WhatsAppIcon() {
       aria-hidden="true"
     >
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" />
-    </svg>
-  );
-}
-
-function TeamsIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path d="M20.625 7.875a2.625 2.625 0 1 0 0-5.25 2.625 2.625 0 0 0 0 5.25zM14.25 8.625a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm5.16 1.313a4.5 4.5 0 0 1 .84 2.594V17.25a.75.75 0 0 1-.75.75H17.25a.75.75 0 0 1-.75-.75v-4.313c0-1.173-.418-2.25-1.109-3.079A4.494 4.494 0 0 1 18.75 9a4.466 4.466 0 0 1 .66.938zM9 9.375a4.875 4.875 0 0 1 4.875 4.875v4.5a.75.75 0 0 1-.75.75h-8.25a.75.75 0 0 1-.75-.75v-4.5A4.875 4.875 0 0 1 9 9.375z" />
     </svg>
   );
 }

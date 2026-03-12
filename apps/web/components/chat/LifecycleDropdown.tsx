@@ -41,7 +41,7 @@ export function LifecycleDropdown({
         <DropdownMenu.Content
           align="start"
           sideOffset={6}
-          className="w-48 bg-white border border-[var(--border-default)] rounded-[var(--radius-button)] shadow-[var(--shadow-dropdown)] z-50 overflow-hidden py-1 animate-in fade-in-0 zoom-in-95"
+          className="w-48 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-[var(--radius-button)] shadow-[var(--shadow-dropdown)] z-50 overflow-hidden py-1 animate-in fade-in-0 zoom-in-95"
         >
           <div className="px-3 pt-2 pb-1">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">

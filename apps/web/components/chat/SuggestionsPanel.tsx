@@ -21,14 +21,14 @@ export function SuggestionsPanel({ suggestions, isLoading, onSelect }: Suggestio
           ? [0, 1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-9 bg-white/60 rounded-lg animate-pulse"
+                className="h-9 bg-[var(--bg-surface-hover)] rounded-lg animate-pulse"
               />
             ))
           : suggestions.map((suggestion, idx) => (
               <button
                 key={idx}
                 onClick={() => onSelect(suggestion)}
-                className="text-left p-2 bg-white hover:bg-white/80 rounded-lg text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)] hover:border-[var(--border-default)] transition-all duration-120 ease-out leading-relaxed"
+                className="text-left p-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] rounded-lg text-[12px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)] hover:border-[var(--border-default)] transition-all duration-120 ease-out leading-relaxed"
               >
                 {suggestion}
               </button>

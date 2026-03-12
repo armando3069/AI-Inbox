@@ -89,7 +89,7 @@ export function MessageBubble({ message, avatar, isFirstInGroup, isLastInGroup }
         <div
           className={`px-3.5 py-2.5 text-[14px] leading-relaxed ${
             isClient
-              ? `bg-white text-[var(--text-primary)] shadow-[var(--shadow-xs)] border border-[var(--border-subtle)]
+              ? `bg-[var(--chat-incoming)] text-[var(--text-primary)] shadow-[var(--shadow-xs)] border border-[var(--border-subtle)]
                  ${isFirstInGroup ? "rounded-2xl rounded-tl-md" : "rounded-2xl"}`
               : `bg-[var(--accent-primary)] text-white
                  ${isFirstInGroup ? "rounded-2xl rounded-tr-md" : "rounded-2xl"}`

@@ -1,53 +1,109 @@
 @import "tailwindcss";
 
+/* Enable dark: prefix with data-theme="dark" attribute */
+@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
   /* ── Backgrounds ─────────────────────────────────── */
-  --bg-page: #F7F6F3;
-  --bg-surface: #FFFFFF;
-  --bg-surface-hover: #F9FAFB;
-  --under-bg: #ECEAE5;
-  --sidebar-bg: #F7F6F3;
+  --bg-page:           #F7F6F3;
+  --bg-surface:        #FFFFFF;
+  --bg-surface-hover:  #F9FAFB;
+  --under-bg:          #ECEAE5;
+  --sidebar-bg:        #F7F6F3;
+
+  /* ── Sidebar nav states ───────────────────────────── */
+  --sidebar-item-active: rgba(255, 255, 255, 0.80);
+  --sidebar-item-hover:  rgba(255, 255, 255, 0.50);
+  --sidebar-sub-active:  rgba(255, 255, 255, 0.60);
+  --sidebar-sub-hover:   rgba(255, 255, 255, 0.40);
+
+  /* ── Chat bubbles ─────────────────────────────────── */
+  --chat-incoming: #FFFFFF;
 
   /* ── Text ────────────────────────────────────────── */
-  --text-primary: #111827;
-  --text-secondary: #6B7280;
-  --text-tertiary: #9CA3AF;
+  --text-primary:    #111827;
+  --text-secondary:  #6B7280;
+  --text-tertiary:   #9CA3AF;
   --text-quaternary: #D1D5DB;
 
   /* ── Borders ─────────────────────────────────────── */
   --border-default: #E5E7EB;
-  --border-subtle: #F3F4F6;
+  --border-subtle:  #F3F4F6;
+  --border-warm:    #E7E3DC;
 
   /* ── Accent ──────────────────────────────────────── */
   --accent-primary: #111827;
-  --accent-blue: #2563EB;
+  --accent-primary-hover: #1F2937;
+  --accent-blue:    #2563EB;
 
   /* ── Radii ───────────────────────────────────────── */
-  --radius-card: 16px;
+  --radius-card:   16px;
   --radius-button: 10px;
-  --radius-input: 10px;
-  --radius-badge: 6px;
+  --radius-input:  10px;
+  --radius-badge:  6px;
 
   /* ── Shadows ─────────────────────────────────────── */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-xs:       0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm:       0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-card:     0 1px 3px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
   --shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.03);
   --shadow-elevated: 0 2px 8px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0, 0, 0, 0.06);
 }
 
+/* ── Dark theme overrides ────────────────────────────────────────────── */
+[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-page:           #0F1117;
+  --bg-surface:        #161B27;
+  --bg-surface-hover:  #1C2333;
+  --under-bg:          #0B0E15;
+  --sidebar-bg:        #0F1117;
+
+  /* Sidebar nav states */
+  --sidebar-item-active: rgba(255, 255, 255, 0.08);
+  --sidebar-item-hover:  rgba(255, 255, 255, 0.05);
+  --sidebar-sub-active:  rgba(255, 255, 255, 0.06);
+  --sidebar-sub-hover:   rgba(255, 255, 255, 0.04);
+
+  /* Chat bubbles */
+  --chat-incoming: #1E2535;
+
+  /* Text */
+  --text-primary:    #F1F3F5;
+  --text-secondary:  #8B949E;
+  --text-tertiary:   #586069;
+  --text-quaternary: #3D4451;
+
+  /* Borders */
+  --border-default: #21262D;
+  --border-subtle:  #161B22;
+  --border-warm:    #21262D;
+
+  /* Accent */
+  --accent-primary: #3B82F6;
+  --accent-primary-hover: #2563EB;
+  --accent-blue:    #58A6FF;
+
+  /* Shadows — more visible on dark backgrounds */
+  --shadow-xs:       0 1px 2px rgba(0, 0, 0, 0.40);
+  --shadow-sm:       0 1px 3px rgba(0, 0, 0, 0.50), 0 1px 2px rgba(0, 0, 0, 0.40);
+  --shadow-card:     0 1px 3px rgba(0, 0, 0, 0.40), 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.60), 0 2px 4px rgba(0, 0, 0, 0.40);
+  --shadow-elevated: 0 2px 8px rgba(0, 0, 0, 0.50), 0 0 1px rgba(0, 0, 0, 0.60);
+}
+
 @theme inline {
-  --color-background: var(--bg-page);
-  --color-foreground: var(--text-primary);
-  --color-surface: var(--bg-surface);
+  --color-background:    var(--bg-page);
+  --color-foreground:    var(--text-primary);
+  --color-surface:       var(--bg-surface);
   --color-surface-hover: var(--bg-surface-hover);
   --color-border-default: var(--border-default);
-  --color-border-subtle: var(--border-subtle);
-  --color-accent: var(--accent-primary);
-  --color-accent-blue: var(--accent-blue);
+  --color-border-subtle:  var(--border-subtle);
+  --color-accent:         var(--accent-primary);
+  --color-accent-blue:    var(--accent-blue);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --shadow-card: var(--shadow-card);
+  --shadow-card:     var(--shadow-card);
   --shadow-dropdown: var(--shadow-dropdown);
 }
 
@@ -85,7 +141,7 @@ body {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: white;
+  background: var(--bg-surface);
   border: 2px solid var(--accent-primary);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
   cursor: pointer;
@@ -100,7 +156,7 @@ body {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: white;
+  background: var(--bg-surface);
   border: 2px solid var(--accent-primary);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
   cursor: pointer;
@@ -121,7 +177,7 @@ body {
   font-family: inherit;
   font-size: 14px;
   line-height: 1.65;
-  color: #374151;
+  color: var(--text-primary);
   word-break: break-word;
   overflow-wrap: break-word;
   max-width: 100%;
@@ -146,24 +202,24 @@ body {
 .email-content td,
 .email-content th {
   padding: 6px 10px;
-  border: 1px solid #E7E3DC;
+  border: 1px solid var(--border-warm);
   vertical-align: top;
   word-break: break-word;
 }
 .email-content th {
-  background: #F9F8F6;
+  background: var(--bg-surface-hover);
   font-weight: 600;
 }
 
 /* ─ Links ─ */
 .email-content a {
-  color: #111827;
+  color: var(--accent-blue);
   text-decoration: underline;
   text-underline-offset: 2px;
   word-break: break-all;
 }
 .email-content a:hover {
-  color: #374151;
+  opacity: 0.8;
 }
 
 /* ─ Paragraphs & spacing ─ */
@@ -194,10 +250,10 @@ body {
 
 /* ─ Blockquotes (often used for reply threads) ─ */
 .email-content blockquote {
-  border-left: 3px solid #E7E3DC;
+  border-left: 3px solid var(--border-warm);
   margin: 0.75em 0;
   padding: 0.4em 0 0.4em 1em;
-  color: #6B7280;
+  color: var(--text-secondary);
   font-size: 0.93em;
 }
 
@@ -206,7 +262,7 @@ body {
 .email-content code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.88em;
-  background: #F3F4F6;
+  background: var(--border-subtle);
   border-radius: 4px;
   padding: 0.15em 0.4em;
 }
@@ -223,7 +279,7 @@ body {
 /* ─ Dividers ─ */
 .email-content hr {
   border: none;
-  border-top: 1px solid #E7E3DC;
+  border-top: 1px solid var(--border-warm);
   margin: 1em 0;
 }
 

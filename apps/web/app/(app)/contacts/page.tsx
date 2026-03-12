@@ -66,15 +66,15 @@ function formatDate(iso: string): string {
 
 function PlatformBadge({ platform }: { platform: string }) {
   const styles: Record<string, string> = {
-    telegram: "bg-sky-50 text-sky-600 border-sky-100",
-    whatsapp: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    teams:    "bg-violet-50 text-violet-600 border-violet-100",
+    telegram: "bg-sky-50 text-sky-600 border-sky-100 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-900/60",
+    whatsapp: "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-900/60",
+    teams:    "bg-violet-50 text-violet-600 border-violet-100 dark:bg-violet-950/50 dark:text-violet-300 dark:border-violet-900/60",
   };
   return (
     <span
       className={cn(
         "inline-flex items-center px-2 py-[3px] rounded-[var(--radius-badge)] border text-[11px] font-medium capitalize leading-none",
-        styles[platform] ?? "bg-gray-50 text-gray-500 border-gray-100"
+        styles[platform] ?? "bg-gray-50 text-gray-500 border-gray-100 dark:bg-gray-900/50 dark:text-gray-400 dark:border-gray-800/60"
       )}
     >
       {platform}
@@ -118,7 +118,7 @@ function PremiumCheckbox({
         "flex h-[15px] w-[15px] items-center justify-center rounded-[4px] border transition-all duration-120 ease-out",
         checked || indeterminate
           ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]"
-          : "border-[var(--border-default)] bg-white hover:border-[var(--text-tertiary)]"
+          : "border-[var(--border-default)] bg-[var(--bg-surface)] hover:border-[var(--text-tertiary)]"
       )}
       onClick={(e) => e.stopPropagation()}
     >
@@ -210,7 +210,7 @@ export default function ContactsPage() {
   const tdCell = "px-4 py-3 border-b border-[var(--border-subtle)]";
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden rounded-xl bg-white shadow-[var(--shadow-card)] border border-[var(--border-default)]">
+    <div className="flex-1 flex flex-col overflow-hidden rounded-xl bg-[var(--bg-surface)] shadow-[var(--shadow-card)] border border-[var(--border-default)]">
 
       {/* ── Header ─────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-6 pt-5 pb-4">
@@ -230,10 +230,10 @@ export default function ContactsPage() {
               {selectedIds.size} selected
             </span>
           )}
-          <button className="h-9 px-3.5 text-[13px] font-medium rounded-[var(--radius-button)] border border-[var(--border-default)] text-[var(--text-secondary)] bg-white hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)] active:scale-[0.98] transition-all duration-120 ease-out">
+          <button className="h-9 px-3.5 text-[13px] font-medium rounded-[var(--radius-button)] border border-[var(--border-default)] text-[var(--text-secondary)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)] active:scale-[0.98] transition-all duration-120 ease-out">
             Actions
           </button>
-          <button className="h-9 px-3.5 text-[13px] font-medium rounded-[var(--radius-button)] bg-[var(--accent-primary)] text-white hover:bg-[#1F2937] active:scale-[0.98] transition-all duration-120 ease-out shadow-[var(--shadow-xs)]">
+          <button className="h-9 px-3.5 text-[13px] font-medium rounded-[var(--radius-button)] bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] active:scale-[0.98] transition-all duration-120 ease-out shadow-[var(--shadow-xs)]">
             New contact
           </button>
         </div>
@@ -248,7 +248,7 @@ export default function ContactsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search contacts..."
-            className="w-full h-10 pl-9 pr-3 text-[13px] border border-[var(--border-default)] rounded-[var(--radius-input)] bg-white text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 focus:border-[var(--border-default)] transition-all duration-120 ease-out"
+            className="w-full h-10 pl-9 pr-3 text-[13px] border border-[var(--border-default)] rounded-[var(--radius-input)] bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 focus:border-[var(--border-default)] transition-all duration-120 ease-out"
           />
         </div>
       </div>
@@ -283,7 +283,7 @@ export default function ContactsPage() {
           <>
             <div className="overflow-x-auto flex-1">
               <table className="w-full text-[13px]">
-                <thead className="sticky top-0 z-10 bg-white">
+                <thead className="sticky top-0 z-10 bg-[var(--bg-surface)]">
                   <tr>
                     <th className={cn(thCell, "w-11 text-center")}>
                       <PremiumCheckbox
