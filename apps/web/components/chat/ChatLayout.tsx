@@ -70,7 +70,7 @@ export function ChatLayout() {
     [setConversations],
   );
 
-  const { messages, isLoading: isLoadingMessages } = useMessages({
+  const { messages, setMessages, isLoading: isLoadingMessages } = useMessages({
     selectedConversation,
     onPreviewUpdate: handlePreviewUpdate,
   });
@@ -242,14 +242,33 @@ export function ChatLayout() {
     if (!messageInput.trim() || !selectedConversation) return;
     const text = messageInput.trim();
     setMessageInput("");
+
+    // ── Optimistic update: show message immediately before server confirms ──
+    const now = new Date().toISOString();
+    const optimisticId = -Date.now(); // negative so we can identify it later
+    const optimisticMsg = {
+      id: optimisticId,
+      conversation_id: selectedConversation.id,
+      sender_type: "bot" as const,
+      text,
+      platform: selectedConversation.platform,
+      timestamp: now,
+      created_at: now,
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
+
     try {
       await messagesService.sendReply(
         selectedConversation.id,
         text,
         selectedConversation.platform,
       );
+      // The real message will arrive via Socket.IO "newMessage" and replace
+      // the optimistic one automatically (see useMessages deduplication logic)
     } catch (e) {
       console.error("sendReply error", e);
+      // Remove the optimistic message on failure
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
     }
   };
 

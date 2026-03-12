@@ -37,7 +37,8 @@ export interface Message {
   id: number;
   conversation_id: number;
   text: string;
-  sender_type: "client" | "agent";
+  /** "client" = incoming from contact; "bot" / "agent" = outgoing reply */
+  sender_type: "client" | "bot" | "agent";
   timestamp?: string;
   created_at?: string;
   /** Platform that delivered this message: "telegram" | "whatsapp" | "email" */
