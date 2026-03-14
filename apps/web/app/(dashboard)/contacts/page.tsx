@@ -13,17 +13,21 @@ import {
   ChevronRight,
   ChevronDown,
   Check,
+  X,
+  Pencil,
   FileSpreadsheet,
   CheckCircle2,
   Trash2,
   AlertTriangle,
+  SlidersHorizontal,
 } from "lucide-react";
 import * as Checkbox from "@radix-ui/react-checkbox";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
+import * as Popover from "@radix-ui/react-popover";
 import { contactsQueryKeys, contactsService } from "@/services/contacts/contacts.service";
 import type { ContactRow } from "@/services/contacts/contacts.types";
-import { getLifecycleStage } from "@/lib/lifecycle";
+import { getLifecycleStage, LIFECYCLE_STAGES } from "@/lib/lifecycle";
 import { AvatarWithPlatformBadge } from "@/app/(dashboard)/inbox/components/chat/AvatarWithPlatformBadge";
 import { cn } from "@/lib/cn";
 import { exportContactsToXlsx } from "@/lib/exportContacts";
@@ -31,6 +35,16 @@ import { exportContactsToXlsx } from "@/lib/exportContacts";
 // ── Constants ────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 20;
+
+// ── Platform filter options ─────────────────────────────────────────────────
+
+type PlatformOption = { id: string; label: string; icon: string };
+
+const PLATFORM_OPTIONS: PlatformOption[] = [
+  { id: "telegram",  label: "Telegram",  icon: "✈️" },
+  { id: "whatsapp",  label: "WhatsApp",  icon: "💬" },
+  { id: "email",     label: "Email",     icon: "📧" },
+];
 
 // ── Sidebar categories ───────────────────────────────────────────────────────
 
@@ -152,9 +166,15 @@ export default function ContactsPage() {
   const [page, setPage]                         = useState(1);
   const [selectedIds, setSelectedIds]           = useState<Set<number>>(new Set());
   const [sortDir, setSortDir]                   = useState<"asc" | "desc">("desc");
+  const [platformFilter, setPlatformFilter]     = useState<Set<string>>(new Set());
   const [exportToast, setExportToast]           = useState<string | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting]             = useState(false);
+
+  // ── Inline edit state ─────────────────────────────────────────────────────
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState({ contactName: "", contactEmail: "", contactPhone: "", lifecycleStatus: "" });
+  const [isSaving, setIsSaving]   = useState(false);
 
   useEffect(() => {
     const id = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 300);
@@ -173,10 +193,13 @@ export default function ContactsPage() {
 
   const category = CATEGORIES.find((c) => c.id === selectedCategory) ?? CATEGORIES[0];
 
-  const filtered = useMemo(
-    () => filterByCategory(allContacts, category),
-    [allContacts, category]
-  );
+  const filtered = useMemo(() => {
+    let result = filterByCategory(allContacts, category);
+    if (platformFilter.size > 0) {
+      result = result.filter((c) => platformFilter.has(c.platform));
+    }
+    return result;
+  }, [allContacts, category, platformFilter]);
 
   const sorted = useMemo(
     () =>
@@ -245,6 +268,61 @@ export default function ContactsPage() {
     } finally {
       setIsDeleting(false);
     }
+  }
+
+  // ── Inline edit handlers ──────────────────────────────────────────────────
+
+  function startEditing() {
+    if (selectedIds.size !== 1) return;
+    const id = Array.from(selectedIds)[0];
+    const row = allContacts.find((c) => c.id === id);
+    if (!row) return;
+    setEditingId(id);
+    setEditDraft({
+      contactName: row.contact_name ?? "",
+      contactEmail: row.contact_email ?? "",
+      contactPhone: row.contact_phone ?? "",
+      lifecycleStatus: row.lifecycle_status ?? "NEW_LEAD",
+    });
+  }
+
+  function cancelEditing() {
+    setEditingId(null);
+  }
+
+  async function saveEditing() {
+    if (editingId === null) return;
+    setIsSaving(true);
+    try {
+      await contactsService.updateContact(editingId, {
+        contactName: editDraft.contactName || null,
+        contactEmail: editDraft.contactEmail || null,
+        contactPhone: editDraft.contactPhone || null,
+        lifecycleStatus: editDraft.lifecycleStatus,
+      });
+      setEditingId(null);
+      await refetch();
+      showExportToast("Contact updated");
+    } catch {
+      // keep editing on error
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function togglePlatform(platform: string) {
+    setPlatformFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(platform)) next.delete(platform);
+      else next.add(platform);
+      return next;
+    });
+    setPage(1);
+  }
+
+  function clearPlatformFilter() {
+    setPlatformFilter(new Set());
+    setPage(1);
   }
 
   const handleRowClick = (row: ContactRow) => {
@@ -318,11 +396,6 @@ export default function ContactsPage() {
           <h1 className="text-[18px] font-semibold text-[var(--text-primary)] tracking-tight leading-none">
             Contacts
           </h1>
-          {!isLoading && (
-            <p className="text-[12px] text-[var(--text-tertiary)] mt-1.5 tabular-nums">
-              {sorted.length} contact{sorted.length !== 1 ? "s" : ""}
-            </p>
-          )}
         </div>
         <div className="flex items-center gap-2">
           {selectedIds.size > 0 && (
@@ -413,13 +486,18 @@ export default function ContactsPage() {
             </DropdownMenu.Portal>
           </DropdownMenu.Root>
 
-          <button className="h-9 px-3.5 text-[13px] font-medium rounded-[var(--radius-button)] bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] active:scale-[0.98] transition-all duration-120 ease-out shadow-[var(--shadow-xs)]">
-            New contact
+          <button
+            onClick={startEditing}
+            disabled={selectedIds.size !== 1}
+            className="h-9 px-3.5 text-[13px] font-medium rounded-[var(--radius-button)] bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none transition-all duration-120 ease-out shadow-[var(--shadow-xs)] inline-flex items-center gap-1.5"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Edit contact
           </button>
         </div>
       </div>
 
-      {/* ── Search toolbar ──────────────────────────────────────────── */}
+      {/* ── Search toolbar + filters ────────────────────────────────── */}
       <div className="flex items-center gap-3 px-6 pb-4">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-[var(--text-tertiary)]" />
@@ -431,6 +509,109 @@ export default function ContactsPage() {
             className="w-full h-10 pl-9 pr-3 text-[13px] border border-[var(--border-default)] rounded-[var(--radius-input)] bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 focus:border-[var(--border-default)] transition-all duration-120 ease-out"
           />
         </div>
+
+        {/* ── Platform filter ─────────────────────────────────────── */}
+        <Popover.Root>
+          <Popover.Trigger asChild>
+            <button
+              className={cn(
+                "h-10 px-3.5 text-[13px] font-medium rounded-[var(--radius-button)] border transition-all duration-120 ease-out inline-flex items-center gap-2 active:scale-[0.98]",
+                platformFilter.size > 0
+                  ? "border-[var(--accent-primary)]/30 bg-[var(--accent-primary)]/[0.06] text-[var(--accent-primary)] hover:bg-[var(--accent-primary)]/[0.10]"
+                  : "border-[var(--border-default)] text-[var(--text-secondary)] bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)]"
+              )}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" />
+              Filters
+              {platformFilter.size > 0 && (
+                <span className="flex items-center justify-center h-[18px] min-w-[18px] px-1 rounded-full bg-[var(--accent-primary)] text-white text-[10px] font-semibold leading-none">
+                  {platformFilter.size}
+                </span>
+              )}
+            </button>
+          </Popover.Trigger>
+
+          <Popover.Portal>
+            <Popover.Content
+              align="start"
+              sideOffset={6}
+              className="w-56 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-[var(--shadow-dropdown)] z-50 overflow-hidden animate-in fade-in-0 zoom-in-95 p-1.5"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-2.5 pt-1.5 pb-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  Platform
+                </p>
+                {platformFilter.size > 0 && (
+                  <button
+                    onClick={clearPlatformFilter}
+                    className="text-[11px] text-[var(--accent-primary)] hover:underline font-medium"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              {/* Platform options */}
+              {PLATFORM_OPTIONS.map((opt) => {
+                const isActive = platformFilter.has(opt.id);
+                return (
+                  <button
+                    key={opt.id}
+                    onClick={() => togglePlatform(opt.id)}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-colors duration-120 cursor-pointer",
+                      isActive
+                        ? "bg-[var(--accent-primary)]/[0.06] text-[var(--text-primary)]"
+                        : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] hover:text-[var(--text-primary)]"
+                    )}
+                  >
+                    {/* Checkbox indicator */}
+                    <div
+                      className={cn(
+                        "flex items-center justify-center h-4 w-4 rounded-[4px] border transition-all duration-120 shrink-0",
+                        isActive
+                          ? "bg-[var(--accent-primary)] border-[var(--accent-primary)]"
+                          : "border-[var(--border-default)] bg-[var(--bg-surface)]"
+                      )}
+                    >
+                      {isActive && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
+                    </div>
+
+                    <span className="text-[14px] leading-none">{opt.icon}</span>
+                    <span className="flex-1 text-left">{opt.label}</span>
+                  </button>
+                );
+              })}
+
+              <Popover.Arrow className="fill-[var(--bg-surface)]" />
+            </Popover.Content>
+          </Popover.Portal>
+        </Popover.Root>
+
+        {/* Active platform filter pills */}
+        {platformFilter.size > 0 && (
+          <div className="flex items-center gap-1.5">
+            {Array.from(platformFilter).map((p) => {
+              const opt = PLATFORM_OPTIONS.find((o) => o.id === p);
+              return (
+                <span
+                  key={p}
+                  className="inline-flex items-center gap-1 pl-2 pr-1 py-1 rounded-md bg-[var(--accent-primary)]/[0.06] border border-[var(--accent-primary)]/15 text-[12px] text-[var(--text-secondary)] font-medium"
+                >
+                  <span className="text-[11px]">{opt?.icon}</span>
+                  {opt?.label}
+                  <button
+                    onClick={() => togglePlatform(p)}
+                    className="ml-0.5 p-0.5 rounded hover:bg-[var(--accent-primary)]/10 transition-colors"
+                  >
+                    <X className="w-3 h-3 text-[var(--text-tertiary)]" />
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── Table ───────────────────────────────────────────────────── */}
@@ -491,6 +672,116 @@ export default function ContactsPage() {
                 <tbody>
                   {paginated.map((row) => {
                     const isSelected = selectedIds.has(row.id);
+                    const isEditing  = row.id === editingId;
+
+                    /* ── EDITING ROW ─────────────────────────────────────── */
+                    if (isEditing) {
+                      const inputClass =
+                        "w-full h-8 px-2.5 rounded-[var(--radius-input)] border border-[var(--accent-primary)]/30 bg-[var(--bg-surface)] text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/12 focus:border-[var(--accent-primary)]/50 transition-all duration-120";
+
+                      return (
+                        <tr
+                          key={row.id}
+                          className="bg-[var(--accent-primary)]/[0.03]"
+                        >
+                          {/* Checkbox */}
+                          <td className={cn(tdCell, "w-11 text-center")}>
+                            <PremiumCheckbox checked={isSelected} onCheckedChange={() => toggleOne(row.id)} />
+                          </td>
+
+                          {/* Name — editable */}
+                          <td className={tdCell}>
+                            <div className="flex items-center gap-2.5">
+                              <AvatarWithPlatformBadge
+                                name={editDraft.contactName || displayName(row)}
+                                avatar={row.contact_avatar}
+                                platform={row.platform}
+                                size="sm"
+                              />
+                              <input
+                                type="text"
+                                value={editDraft.contactName}
+                                onChange={(e) => setEditDraft((d) => ({ ...d, contactName: e.target.value }))}
+                                className={cn(inputClass, "max-w-[180px]")}
+                                placeholder="Name"
+                                autoFocus
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                          </td>
+
+                          {/* Platform — read-only */}
+                          <td className={tdCell}>
+                            <PlatformBadge platform={row.platform} />
+                          </td>
+
+                          {/* Lifecycle — select */}
+                          <td className={tdCell}>
+                            <select
+                              value={editDraft.lifecycleStatus}
+                              onChange={(e) => setEditDraft((d) => ({ ...d, lifecycleStatus: e.target.value }))}
+                              onClick={(e) => e.stopPropagation()}
+                              className={cn(inputClass, "pr-7 appearance-none cursor-pointer bg-[length:16px] bg-[right_6px_center] bg-no-repeat")}
+                              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
+                            >
+                              {LIFECYCLE_STAGES.map((s) => (
+                                <option key={s.value} value={s.value}>
+                                  {s.emoji} {s.label}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+
+                          {/* Email — editable */}
+                          <td className={tdCell}>
+                            <input
+                              type="email"
+                              value={editDraft.contactEmail}
+                              onChange={(e) => setEditDraft((d) => ({ ...d, contactEmail: e.target.value }))}
+                              className={inputClass}
+                              placeholder="email@example.com"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </td>
+
+                          {/* Phone — editable */}
+                          <td className={tdCell}>
+                            <input
+                              type="tel"
+                              value={editDraft.contactPhone}
+                              onChange={(e) => setEditDraft((d) => ({ ...d, contactPhone: e.target.value }))}
+                              className={inputClass}
+                              placeholder="+40 ..."
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </td>
+
+                          {/* Actions: Save + Cancel */}
+                          <td className={cn(tdCell, "whitespace-nowrap")}>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); void saveEditing(); }}
+                                disabled={isSaving}
+                                className="flex items-center justify-center h-7 w-7 rounded-md bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] disabled:opacity-50 transition-all duration-120 shadow-[var(--shadow-xs)]"
+                                title="Save"
+                              >
+                                {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" strokeWidth={2.5} />}
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); cancelEditing(); }}
+                                disabled={isSaving}
+                                className="flex items-center justify-center h-7 w-7 rounded-md border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] disabled:opacity-50 transition-all duration-120"
+                                title="Cancel"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    /* ── NORMAL ROW ──────────────────────────────────────── */
                     return (
                       <tr
                         key={row.id}

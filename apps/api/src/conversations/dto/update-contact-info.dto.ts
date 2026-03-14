@@ -16,6 +16,10 @@ const LIFECYCLE_VALUES = [
 
 export class UpdateContactInfoDto {
   @IsOptional()
+  @IsString()
+  contactName?: string | null;
+
+  @IsOptional()
   @IsIn(LIFECYCLE_VALUES)
   lifecycleStatus?: string;
 

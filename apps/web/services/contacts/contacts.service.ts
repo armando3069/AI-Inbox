@@ -17,6 +17,16 @@ class ContactsService {
     request.delete<{ deleted: number }>(ROUTES.conversations.deleteBulk, {
       data: { ids },
     });
+
+  updateContact = (
+    id: number,
+    data: {
+      contactName?: string | null;
+      lifecycleStatus?: string;
+      contactEmail?: string | null;
+      contactPhone?: string | null;
+    },
+  ) => request.patch(ROUTES.conversations.contactInfo(id), data);
 }
 
 export const contactsService = new ContactsService();
