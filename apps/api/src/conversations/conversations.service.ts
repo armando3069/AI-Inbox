@@ -82,6 +82,7 @@ export class ConversationsService {
     await this.getConversationForUser(id, userId);
 
     const data: Prisma.conversationsUpdateInput = {};
+    if (dto.contactName     !== undefined) data.contact_name     = dto.contactName;
     if (dto.lifecycleStatus !== undefined) data.lifecycle_status = dto.lifecycleStatus;
     if (dto.contactEmail    !== undefined) data.contact_email    = dto.contactEmail;
     if (dto.contactPhone    !== undefined) data.contact_phone    = dto.contactPhone;

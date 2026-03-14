@@ -13,6 +13,8 @@ import {
   ChevronRight,
   ChevronDown,
   Check,
+  X,
+  Pencil,
   FileSpreadsheet,
   CheckCircle2,
   Trash2,
@@ -23,7 +25,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
 import { contactsQueryKeys, contactsService } from "@/services/contacts/contacts.service";
 import type { ContactRow } from "@/services/contacts/contacts.types";
-import { getLifecycleStage } from "@/lib/lifecycle";
+import { getLifecycleStage, LIFECYCLE_STAGES } from "@/lib/lifecycle";
 import { AvatarWithPlatformBadge } from "@/app/(dashboard)/inbox/components/chat/AvatarWithPlatformBadge";
 import { cn } from "@/lib/cn";
 import { exportContactsToXlsx } from "@/lib/exportContacts";
@@ -156,6 +158,11 @@ export default function ContactsPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting]             = useState(false);
 
+  // ── Inline edit state ─────────────────────────────────────────────────────
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState({ contactName: "", contactEmail: "", contactPhone: "", lifecycleStatus: "" });
+  const [isSaving, setIsSaving]   = useState(false);
+
   useEffect(() => {
     const id = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 300);
     return () => clearTimeout(id);
@@ -247,6 +254,46 @@ export default function ContactsPage() {
     }
   }
 
+  // ── Inline edit handlers ──────────────────────────────────────────────────
+
+  function startEditing() {
+    if (selectedIds.size !== 1) return;
+    const id = Array.from(selectedIds)[0];
+    const row = allContacts.find((c) => c.id === id);
+    if (!row) return;
+    setEditingId(id);
+    setEditDraft({
+      contactName: row.contact_name ?? "",
+      contactEmail: row.contact_email ?? "",
+      contactPhone: row.contact_phone ?? "",
+      lifecycleStatus: row.lifecycle_status ?? "NEW_LEAD",
+    });
+  }
+
+  function cancelEditing() {
+    setEditingId(null);
+  }
+
+  async function saveEditing() {
+    if (editingId === null) return;
+    setIsSaving(true);
+    try {
+      await contactsService.updateContact(editingId, {
+        contactName: editDraft.contactName || null,
+        contactEmail: editDraft.contactEmail || null,
+        contactPhone: editDraft.contactPhone || null,
+        lifecycleStatus: editDraft.lifecycleStatus,
+      });
+      setEditingId(null);
+      await refetch();
+      showExportToast("Contact updated");
+    } catch {
+      // keep editing on error
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   const handleRowClick = (row: ContactRow) => {
     sessionStorage.setItem("pendingConvId", String(row.id));
     router.push("/inbox");
@@ -318,11 +365,6 @@ export default function ContactsPage() {
           <h1 className="text-[18px] font-semibold text-[var(--text-primary)] tracking-tight leading-none">
             Contacts
           </h1>
-          {!isLoading && (
-            <p className="text-[12px] text-[var(--text-tertiary)] mt-1.5 tabular-nums">
-              {sorted.length} contact{sorted.length !== 1 ? "s" : ""}
-            </p>
-          )}
         </div>
         <div className="flex items-center gap-2">
           {selectedIds.size > 0 && (
@@ -413,8 +455,13 @@ export default function ContactsPage() {
             </DropdownMenu.Portal>
           </DropdownMenu.Root>
 
-          <button className="h-9 px-3.5 text-[13px] font-medium rounded-[var(--radius-button)] bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] active:scale-[0.98] transition-all duration-120 ease-out shadow-[var(--shadow-xs)]">
-            New contact
+          <button
+            onClick={startEditing}
+            disabled={selectedIds.size !== 1}
+            className="h-9 px-3.5 text-[13px] font-medium rounded-[var(--radius-button)] bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none transition-all duration-120 ease-out shadow-[var(--shadow-xs)] inline-flex items-center gap-1.5"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Edit contact
           </button>
         </div>
       </div>
@@ -491,6 +538,116 @@ export default function ContactsPage() {
                 <tbody>
                   {paginated.map((row) => {
                     const isSelected = selectedIds.has(row.id);
+                    const isEditing  = row.id === editingId;
+
+                    /* ── EDITING ROW ─────────────────────────────────────── */
+                    if (isEditing) {
+                      const inputClass =
+                        "w-full h-8 px-2.5 rounded-[var(--radius-input)] border border-[var(--accent-primary)]/30 bg-[var(--bg-surface)] text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/12 focus:border-[var(--accent-primary)]/50 transition-all duration-120";
+
+                      return (
+                        <tr
+                          key={row.id}
+                          className="bg-[var(--accent-primary)]/[0.03]"
+                        >
+                          {/* Checkbox */}
+                          <td className={cn(tdCell, "w-11 text-center")}>
+                            <PremiumCheckbox checked={isSelected} onCheckedChange={() => toggleOne(row.id)} />
+                          </td>
+
+                          {/* Name — editable */}
+                          <td className={tdCell}>
+                            <div className="flex items-center gap-2.5">
+                              <AvatarWithPlatformBadge
+                                name={editDraft.contactName || displayName(row)}
+                                avatar={row.contact_avatar}
+                                platform={row.platform}
+                                size="sm"
+                              />
+                              <input
+                                type="text"
+                                value={editDraft.contactName}
+                                onChange={(e) => setEditDraft((d) => ({ ...d, contactName: e.target.value }))}
+                                className={cn(inputClass, "max-w-[180px]")}
+                                placeholder="Name"
+                                autoFocus
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                          </td>
+
+                          {/* Platform — read-only */}
+                          <td className={tdCell}>
+                            <PlatformBadge platform={row.platform} />
+                          </td>
+
+                          {/* Lifecycle — select */}
+                          <td className={tdCell}>
+                            <select
+                              value={editDraft.lifecycleStatus}
+                              onChange={(e) => setEditDraft((d) => ({ ...d, lifecycleStatus: e.target.value }))}
+                              onClick={(e) => e.stopPropagation()}
+                              className={cn(inputClass, "pr-7 appearance-none cursor-pointer bg-[length:16px] bg-[right_6px_center] bg-no-repeat")}
+                              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")` }}
+                            >
+                              {LIFECYCLE_STAGES.map((s) => (
+                                <option key={s.value} value={s.value}>
+                                  {s.emoji} {s.label}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+
+                          {/* Email — editable */}
+                          <td className={tdCell}>
+                            <input
+                              type="email"
+                              value={editDraft.contactEmail}
+                              onChange={(e) => setEditDraft((d) => ({ ...d, contactEmail: e.target.value }))}
+                              className={inputClass}
+                              placeholder="email@example.com"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </td>
+
+                          {/* Phone — editable */}
+                          <td className={tdCell}>
+                            <input
+                              type="tel"
+                              value={editDraft.contactPhone}
+                              onChange={(e) => setEditDraft((d) => ({ ...d, contactPhone: e.target.value }))}
+                              className={inputClass}
+                              placeholder="+40 ..."
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </td>
+
+                          {/* Actions: Save + Cancel */}
+                          <td className={cn(tdCell, "whitespace-nowrap")}>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); void saveEditing(); }}
+                                disabled={isSaving}
+                                className="flex items-center justify-center h-7 w-7 rounded-md bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary-hover)] disabled:opacity-50 transition-all duration-120 shadow-[var(--shadow-xs)]"
+                                title="Save"
+                              >
+                                {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" strokeWidth={2.5} />}
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); cancelEditing(); }}
+                                disabled={isSaving}
+                                className="flex items-center justify-center h-7 w-7 rounded-md border border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-surface-hover)] disabled:opacity-50 transition-all duration-120"
+                                title="Cancel"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    /* ── NORMAL ROW ──────────────────────────────────────── */
                     return (
                       <tr
                         key={row.id}
