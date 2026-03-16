@@ -101,7 +101,7 @@ export default function SignupPage() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full h-11 pl-[42px] pr-3.5 rounded-[10px] border border-[#E5E7EB] bg-[#FAFAFA] text-[13px] text-[#111827] placeholder-[#D1D5DB] focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#111827]/8 focus:border-[#9CA3AF] transition-all duration-150"
+                  className="w-full h-11 pl-[42px] pr-3.5 rounded-[10px] border border-[#E5E7EB] bg-[#FAFAFA] text-[13px] text-[#111827] placeholder-[#D1D5DB] focus:outline-none focus:bg-white focus:border-[#9CA3AF] transition-all duration-150"
                   placeholder="Jane Doe"
                 />
               </div>
@@ -124,7 +124,7 @@ export default function SignupPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-11 pl-[42px] pr-3.5 rounded-[10px] border border-[#E5E7EB] bg-[#FAFAFA] text-[13px] text-[#111827] placeholder-[#D1D5DB] focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#111827]/8 focus:border-[#9CA3AF] transition-all duration-150"
+                  className="w-full h-11 pl-[42px] pr-3.5 rounded-[10px] border border-[#E5E7EB] bg-[#FAFAFA] text-[13px] text-[#111827] placeholder-[#D1D5DB] focus:outline-none focus:bg-white focus:border-[#9CA3AF] transition-all duration-150"
                   placeholder="you@example.com"
                 />
               </div>
@@ -147,7 +147,7 @@ export default function SignupPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-11 pl-[42px] pr-3.5 rounded-[10px] border border-[#E5E7EB] bg-[#FAFAFA] text-[13px] text-[#111827] placeholder-[#D1D5DB] focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#111827]/8 focus:border-[#9CA3AF] transition-all duration-150"
+                  className="w-full h-11 pl-[42px] pr-3.5 rounded-[10px] border border-[#E5E7EB] bg-[#FAFAFA] text-[13px] text-[#111827] placeholder-[#D1D5DB] focus:outline-none focus:bg-white focus:border-[#9CA3AF] transition-all duration-150"
                   placeholder="••••••••"
                 />
               </div>

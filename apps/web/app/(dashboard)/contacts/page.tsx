@@ -506,7 +506,7 @@ export default function ContactsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search contacts..."
-            className="w-full h-10 pl-9 pr-3 text-[13px] border border-[var(--border-default)] rounded-[var(--radius-input)] bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/8 focus:border-[var(--border-default)] transition-all duration-120 ease-out"
+            className="w-full h-10 pl-9 pr-3 text-[13px] border border-[var(--border-default)] rounded-[var(--radius-input)] bg-[var(--bg-surface)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-[var(--border-default)] transition-all duration-120 ease-out"
           />
         </div>
 
@@ -677,7 +677,7 @@ export default function ContactsPage() {
                     /* ── EDITING ROW ─────────────────────────────────────── */
                     if (isEditing) {
                       const inputClass =
-                        "w-full h-8 px-2.5 rounded-[var(--radius-input)] border border-[var(--accent-primary)]/30 bg-[var(--bg-surface)] text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/12 focus:border-[var(--accent-primary)]/50 transition-all duration-120";
+                        "w-full h-8 px-2.5 rounded-[var(--radius-input)] border border-[var(--accent-primary)]/30 bg-[var(--bg-surface)] text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-[var(--accent-primary)]/50 transition-all duration-120";
 
                       return (
                         <tr

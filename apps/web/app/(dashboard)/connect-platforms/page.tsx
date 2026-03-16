@@ -33,7 +33,7 @@ const ICON_BOX =
 const INPUT =
   "w-full rounded-[var(--radius-input)] border border-[var(--border-default)] bg-[var(--bg-page)]" +
   " px-4 py-2.5 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)]" +
-  " focus:outline-none focus:ring-2 focus:ring-[var(--accent-primary)]/10 focus:border-[var(--text-secondary)]" +
+  " focus:outline-none focus:border-[var(--text-secondary)]" +
   " transition-all duration-150 ease-out leading-snug";
 
 /** Field label */
