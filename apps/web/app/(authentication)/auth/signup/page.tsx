@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -10,7 +10,13 @@ import { AuthRightPanel } from "@/components/auth/AuthRightPanel";
 
 export default function SignupPage() {
   const router = useRouter();
-  const { signup } = useAuth();
+  const { signup, isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.replace("/inbox");
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   const [name, setName]             = useState("");
   const [email, setEmail]           = useState("");
