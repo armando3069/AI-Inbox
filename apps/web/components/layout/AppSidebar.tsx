@@ -135,7 +135,7 @@ function NavItemButton({
 const THEME_OPTIONS: { value: Theme; icon: typeof Sun; label: string }[] = [
   { value: "light",  icon: Sun,     label: "Light" },
   { value: "dark",   icon: Moon,    label: "Dark" },
-  { value: "system", icon: Monitor, label: "System" },
+  // { value: "system", icon: Monitor, label: "System" },
 ];
 
 function UserMenuDropdown({
@@ -173,7 +173,7 @@ function UserMenuDropdown({
       align={expanded ? "start" : "end"}
       sideOffset={8}
       className={`
-        z-50 min-w-[240px] rounded-xl border border-[var(--border-default)]
+        z-50 min-w-[215px] rounded-xl border border-[var(--border-default)]
         bg-[var(--bg-surface)] shadow-[var(--shadow-dropdown)]
         animate-in fade-in-0 zoom-in-95 origin-bottom-left
       `}
