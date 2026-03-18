@@ -72,6 +72,17 @@ model messages {
   conversation        conversations? @relation(fields: [conversation_id], references: [id])
 }
 
+model ai_usage_logs {
+  id              Int      @id @default(autoincrement())
+  user_id         Int?
+  conversation_id Int?
+  model           String   @default("unknown")
+  tokens_in       Int      @default(0)
+  tokens_out      Int      @default(0)
+  cost_usd        Float    @default(0)
+  created_at      DateTime @default(now())
+}
+
 model auth_accounts {
   id                  Int       @id @default(autoincrement())
   user_id             Int
