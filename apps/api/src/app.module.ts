@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
 import { KnowledgeBaseModule } from './knowledge-base/knowledge-base.module';
 import { ConversationsModule } from './conversations/conversations.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ConversationsModule } from './conversations/conversations.module';
     AiAssistantModule,
     KnowledgeBaseModule,
     ConversationsModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}

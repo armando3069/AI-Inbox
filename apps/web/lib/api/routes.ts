@@ -43,4 +43,9 @@ export const ROUTES = {
     emailTest: (email: string) => `/email/test/${encodeURIComponent(email)}`,
     emailAccounts: "/email/accounts",
   },
+  analytics: {
+    tokens:   "/analytics/tokens",
+    cost:     "/analytics/cost",
+    messages: "/analytics/messages",
+  },
 } as const;
