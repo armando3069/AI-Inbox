@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="apps/web/public/favicon.svg" alt="AI Inbox Logo" width="72" height="72" />
+<img src="apps/web/public/logo.svg" alt="AI Inbox Logo" width="72" height="72" />
 
 # AI Inbox
 
