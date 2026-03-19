@@ -48,9 +48,9 @@ function createWindow(): void {
     },
   });
 
-  win.webContents.on('did-finish-load', () => {
-    win.webContents.setZoomFactor(0.9);
-  });
+  // win.webContents.on('did-finish-load', () => {
+  //   win.webContents.setZoomFactor(1);
+  // });
 
   win.loadURL(WEB_URL);
 
