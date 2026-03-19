@@ -7,35 +7,9 @@ import {
 } from "recharts";
 import { analyticsService, analyticsQueryKeys } from "@/services/analytics/analytics.service";
 import { PageHeader } from "@/components/layout/PageHeader";
-
-function StatCard({
-  label,
-  value,
-  sub,
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-}) {
-  return (
-    <div className="bg-[var(--bg-surface)] rounded-xl border border-[var(--border-default)] p-5">
-      <p className="text-[12px] text-[var(--text-tertiary)] font-medium mb-2">{label}</p>
-      <p className="text-[28px] font-semibold text-[var(--text-primary)] leading-none">{value}</p>
-      {sub && <p className="text-[11px] text-[var(--text-tertiary)] mt-1.5">{sub}</p>}
-    </div>
-  );
-}
-
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function fmt(n: number) {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
-}
+import { StatCard } from "@/components/ui/StatCard";
+import { formatDate, fmt } from "@/app/(dashboard)/analytics/utils/analytics.utils";
+import { AnalyticsPageLayout } from "@/app/(dashboard)/analytics/components/AnalyticsPageLayout";
 
 export default function MessagesPage() {
   const { data, isLoading } = useQuery({
@@ -51,8 +25,7 @@ export default function MessagesPage() {
   }));
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden rounded-xl bg-[var(--bg-surface)] shadow-[var(--shadow-card)] border border-[var(--border-default)]">
-    <div className="flex-1 overflow-y-auto p-6 space-y-6">
+    <AnalyticsPageLayout>
       <PageHeader title="Messages" />
 
       {/* Stat cards */}
@@ -120,7 +93,6 @@ export default function MessagesPage() {
           </ResponsiveContainer>
         )}
       </div>
-    </div>
-    </div>
+    </AnalyticsPageLayout>
   );
 }
