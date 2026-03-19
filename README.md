@@ -17,13 +17,13 @@
 
 [Features](#-features) · [Tech Stack](#-tech-stack) · [Getting Started](#-getting-started) · [Architecture](#-architecture) · [Environment Variables](#-environment-variables) · [Project Structure](#-project-structure)
 
----
+
 
 <img src="apps/web/public/apps.png" alt="AI Inbox Logo" width="100%" height="100%" />
 
 </div>
 
----
+
 
 ## ✨ Features
 
