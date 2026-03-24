@@ -2,7 +2,7 @@
 
 <img src="apps/web/public/logo.svg" alt="AI Inbox Logo" width="72" height="72" />
 
-# AIInbox
+# AI Inbox
 
 **One inbox for all your customer conversations**
 
