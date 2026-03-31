@@ -9,21 +9,19 @@ RUN npm ci
 
 FROM deps AS build
 COPY . .
-WORKDIR /app/apps/web
-RUN rm -rf node_modules && npm ci
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+RUN npm run build -w web
 
 FROM node:20-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/apps/web/.next ./apps/web/.next
 COPY --from=build /app/apps/web/public ./apps/web/public
 COPY --from=build /app/apps/web/package.json ./apps/web/package.json
 COPY --from=build /app/apps/web/next.config.* ./apps/web/
-COPY --from=build /app/apps/web/node_modules ./apps/web/node_modules
 
 WORKDIR /app/apps/web
 EXPOSE 3000
