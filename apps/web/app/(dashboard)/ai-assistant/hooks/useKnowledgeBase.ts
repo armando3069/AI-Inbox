@@ -24,7 +24,7 @@ export interface UseKnowledgeBaseReturn {
   kbAnswerLoading: boolean;
   kbAnswerError: string | null;
   clearingKb: boolean;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  fileInputRef: React.RefObject<HTMLInputElement>;
   loadKbFiles: () => Promise<void>;
   handlePdfUpload: (file: File) => Promise<void>;
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
