@@ -5,12 +5,12 @@ FROM base AS deps
 COPY package*.json ./
 COPY apps/api/package*.json ./apps/api/
 COPY apps/web/package*.json ./apps/web/
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 FROM deps AS build
 COPY . .
 WORKDIR /app/apps/web
-RUN rm -rf node_modules && npm ci
+RUN rm -rf node_modules && npm ci --legacy-peer-deps
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
