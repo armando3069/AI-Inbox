@@ -19,7 +19,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "migrate:deploy": "prisma migrate deploy --config=./prisma.config.ts"
+    "migrate:deploy": "prisma migrate deploy --config=./prisma.config.ts",
+    "prisma:generate": "prisma generate --config=./prisma.config.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.79.0",
@@ -37,6 +38,7 @@
     "argon2": "^0.44.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
+    "dotenv": "^17.3.1",
     "imapflow": "^1.2.13",
     "mailparser": "^3.9.4",
     "node-telegram-bot-api": "^0.66.0",

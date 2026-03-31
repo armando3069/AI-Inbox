@@ -28,4 +28,4 @@ COPY --from=build /app/apps/api/prisma.config.ts ./apps/api/prisma.config.ts
 WORKDIR /app/apps/api
 EXPOSE 3001
 
-CMD ["sh", "-c", "npx prisma migrate deploy --config=./prisma.config.ts && node dist/main"]
+CMD ["sh", "-c", "npm run migrate:deploy && node dist/main"]
