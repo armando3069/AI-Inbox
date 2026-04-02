@@ -1,31 +1,25 @@
 FROM node:20-alpine AS base
-WORKDIR /app
+WORKDIR /app/apps/api
 
 FROM base AS deps
-COPY package*.json ./
-COPY apps/api/package*.json ./apps/api/
-COPY apps/web/package*.json ./apps/web/
-RUN npm ci
+COPY apps/api/package*.json ./
+RUN npm install
 
 FROM deps AS build
-COPY . .
-WORKDIR /app/apps/api
+COPY apps/api ./
 RUN npx prisma generate --config=./prisma.config.ts
 RUN npm run build
 
 FROM node:20-alpine AS runner
-WORKDIR /app
+WORKDIR /app/apps/api
 ENV NODE_ENV=production
 
-COPY --from=deps /app/package.json ./package.json
-COPY --from=deps /app/package-lock.json ./package-lock.json
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/apps/api/dist ./apps/api/dist
-COPY --from=build /app/apps/api/package.json ./apps/api/package.json
-COPY --from=build /app/apps/api/prisma ./apps/api/prisma
-COPY --from=build /app/apps/api/prisma.config.ts ./apps/api/prisma.config.ts
+COPY --from=deps /app/apps/api/node_modules ./node_modules
+COPY --from=build /app/apps/api/dist ./dist
+COPY --from=build /app/apps/api/package.json ./package.json
+COPY --from=build /app/apps/api/prisma ./prisma
+COPY --from=build /app/apps/api/prisma.config.ts ./prisma.config.ts
 
-WORKDIR /app/apps/api
 EXPOSE 3001
 
 CMD ["node", "dist/src/main.js"]
