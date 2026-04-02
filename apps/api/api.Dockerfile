@@ -28,4 +28,4 @@ COPY --from=build /app/apps/api/prisma.config.ts ./apps/api/prisma.config.ts
 WORKDIR /app/apps/api
 EXPOSE 3001
 
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main.js"]
