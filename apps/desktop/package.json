@@ -7,6 +7,9 @@
   "main": "dist/main.js",
   "scripts": {
     "dev":         "cross-env NODE_ENV=development electron src/dev-runner.js",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:linux": "npm run build && electron-builder --linux",
     "build:icons": "bash scripts/build-icons.sh",
     "build:ts":    "tsc",
     "build":       "npm run build:icons && npm run build:ts",
@@ -15,7 +18,7 @@
   },
   "build": {
     "appId": "com.zottis.desktop",
-    "productName": "Zottis",
+    "productName": "AI-Inbox",
     "electronVersion": "34.5.8",
     "directories": {
       "output": "release"
