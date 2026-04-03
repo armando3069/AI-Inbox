@@ -9,7 +9,7 @@ interface PlatformCardProps {
 }
 
 export function PlatformCard({ platform, isSelected, isConnected, onClick }: PlatformCardProps) {
-  const clickable = platform.status === "available" && !isConnected;
+  const clickable = platform.status === "available";
 
   return (
     <button
@@ -25,7 +25,7 @@ export function PlatformCard({ platform, isSelected, isConnected, onClick }: Pla
         isSelected
           ? "border-[var(--accent-primary)] ring-2 ring-[var(--accent-primary)]/10 shadow-[var(--shadow-sm)] cursor-default"
           : "",
-        isConnected && !isSelected ? "cursor-default opacity-75" : "",
+        isConnected && !isSelected ? "opacity-90" : "",
       ]
         .filter(Boolean)
         .join(" ")}

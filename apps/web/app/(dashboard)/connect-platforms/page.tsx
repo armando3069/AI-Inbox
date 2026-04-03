@@ -24,10 +24,11 @@ function ConnectPlatformsContent() {
   const {
     isAuthLoading, isCheckingPlatforms,
     connectedIds, selectedId, handleCardClick,
-    isConnecting, connectError, toast,
+    isConnecting, isDisconnecting, connectError, toast,
     tgBotToken, setTgBotToken, handleTelegramSubmit,
     waAccessToken, setWaAccessToken, waPhoneNumberId, setWaPhoneNumberId, handleWhatsappSubmit,
-    msPageId, setMsPageId, msPageAccessToken, setMsPageAccessToken, handleMessengerSubmit,
+    isFacebookStatusLoading, facebookConnection, facebookPendingPages,
+    handleFacebookConnect, handleFacebookPageSelect, handleFacebookDisconnect,
     emEmail, setEmEmail, emPassword, setEmPassword,
     emProvider, setEmProvider, emShowAdvanced, setEmShowAdvanced,
     emImapHost, setEmImapHost, emImapPort, setEmImapPort, emImapSecure, setEmImapSecure,
@@ -127,13 +128,15 @@ function ConnectPlatformsContent() {
 
               {selectedId === "messenger" && (
                 <MessengerForm
-                  pageId={msPageId}
-                  pageAccessToken={msPageAccessToken}
-                  onPageIdChange={setMsPageId}
-                  onPageAccessTokenChange={setMsPageAccessToken}
                   isConnecting={isConnecting}
+                  isDisconnecting={isDisconnecting}
+                  isLoadingState={isFacebookStatusLoading}
                   error={connectError}
-                  onSubmit={handleMessengerSubmit}
+                  connectedPage={facebookConnection}
+                  pendingPages={facebookPendingPages}
+                  onConnect={handleFacebookConnect}
+                  onDisconnect={handleFacebookDisconnect}
+                  onSelectPage={handleFacebookPageSelect}
                 />
               )}
 
