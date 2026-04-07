@@ -153,6 +153,14 @@ export class FacebookGraphClient {
     const params = new URLSearchParams({
       access_token: pageAccessToken,
     });
+
+    if (method === 'POST') {
+      params.set(
+        'subscribed_fields',
+        ['messages', 'messaging_postbacks', 'message_deliveries', 'message_reads'].join(','),
+      );
+    }
+
     const response = await fetch(
       `${this.graphBase}/${pageId}/subscribed_apps?${params.toString()}`,
       { method },
