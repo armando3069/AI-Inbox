@@ -1,3 +1,4 @@
+"use client";
 import { Apple, Monitor } from "lucide-react";
 
 export function MacDownload() {
