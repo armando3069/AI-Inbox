@@ -13,7 +13,7 @@ yarn lint       # Run ESLint
 
 No test suite is configured yet.
 
-## Environment Variables
+## Environment Variables. 
 
 Copy `.env` and set:
 - `NEXT_PUBLIC_API_URL` — REST API base URL (default: `http://localhost:3000`)
