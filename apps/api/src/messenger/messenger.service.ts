@@ -10,10 +10,10 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChatGateway } from '../chat/chat.gateway';
 import { AiAssistantService } from '../ai-assistant/ai-assistant.service';
-import { ConnectMessengerDto } from './dto/connect-messenger.dto';
 import { updateConversationLastMessage } from '../common/conversation.helper';
 import { ReplyDto } from '../common/dto/reply.dto';
 import type { conversations, messages, platform_accounts } from '@prisma/client';
+import { TokenCryptoService } from '../common/security/token-crypto.service';
 
 // ── Facebook Messenger webhook payload shapes ──────────────────────────────────
 
@@ -54,6 +54,7 @@ export class MessengerService {
   constructor(
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly tokenCrypto: TokenCryptoService,
     @Inject(forwardRef(() => ChatGateway))
     private readonly chatGateway: ChatGateway,
     @Inject(forwardRef(() => AiAssistantService))
@@ -89,52 +90,24 @@ export class MessengerService {
     }
   }
 
-  // ── Connect — saves page credentials to DB ───────────────────────────────
-
-  async connect(userId: number, dto: ConnectMessengerDto): Promise<void> {
-    const existing = await this.prisma.platform_accounts.findFirst({
-      where: { platform: 'messenger', external_app_id: dto.pageId },
-    });
-
-    if (existing) {
-      await this.prisma.platform_accounts.update({
-        where: { id: existing.id },
-        data: { user_id: userId, access_token: dto.pageAccessToken },
-      });
-    } else {
-      await this.prisma.platform_accounts.create({
-        data: {
-          user_id: userId,
-          platform: 'messenger',
-          access_token: dto.pageAccessToken,
-          external_app_id: dto.pageId,
-        },
-      });
-    }
-
-    this.logger.log(
-      `Messenger connected for user ${userId} (page_id=${dto.pageId})`,
-    );
-  }
-
   // ── Reply to an existing conversation ────────────────────────────────────
 
   async reply(userId: number, dto: ReplyDto): Promise<messages> {
     const conversation = await this.prisma.conversations.findFirst({
       where: {
         id: dto.conversationId,
-        platform_account: { user_id: userId },
+        platform_account: { user_id: userId, status: 'active' },
       },
       include: { platform_account: true },
     });
 
     if (!conversation) throw new NotFoundException('Conversation not found');
 
-    await this.sendApi(
+    const pageAccessToken = this.decryptAccessToken(
       conversation.platform_account.access_token,
-      conversation.external_chat_id,
-      dto.text,
     );
+
+    await this.sendApi(pageAccessToken, conversation.external_chat_id, dto.text);
 
     const msg = await this.prisma.messages.create({
       data: {
@@ -168,16 +141,20 @@ export class MessengerService {
       const pageId = entry.id;
 
       const platformAccount = await this.prisma.platform_accounts.findFirst({
-        where: { platform: 'messenger', external_app_id: pageId },
+        where: {
+          platform: 'messenger',
+          external_app_id: pageId,
+          status: 'active',
+        },
       });
 
-      if (!platformAccount) {
-        this.logger.warn(
-          `[MESSENGER WEBHOOK] No platform_account for page_id=${pageId}. ` +
-            `Connect the page first via POST /messenger/connect.`,
-        );
-        continue;
-      }
+        if (!platformAccount) {
+          this.logger.warn(
+            `[MESSENGER WEBHOOK] No platform_account for page_id=${pageId}. ` +
+            `Connect the page first via the Facebook OAuth flow.`,
+          );
+          continue;
+        }
 
       for (const event of entry.messaging ?? []) {
         // Skip echo events (messages sent by the page itself)
@@ -233,7 +210,7 @@ export class MessengerService {
       isNew = true;
       const profile = await this.fetchMessengerProfile(
         senderId,
-        platformAccount.access_token,
+        this.decryptAccessToken(platformAccount.access_token),
       );
       conversation = await this.prisma.conversations.create({
         data: {
@@ -327,5 +304,9 @@ export class MessengerService {
     this.logger.log(
       `[MESSENGER AUTO-REPLY] sent to conversation ${conversation.id}`,
     );
+  }
+
+  private decryptAccessToken(token: string): string {
+    return this.tokenCrypto.decrypt(token);
   }
 }

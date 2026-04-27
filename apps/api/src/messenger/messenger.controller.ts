@@ -14,7 +14,6 @@ import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MessengerService } from './messenger.service';
 import type { MessengerWebhookPayload } from './messenger.service';
-import { ConnectMessengerDto } from './dto/connect-messenger.dto';
 import { ReplyDto } from '../common/dto/reply.dto';
 import type { AuthenticatedRequest } from '../common/types';
 
@@ -47,18 +46,6 @@ export class MessengerController {
   async handleWebhook(@Body() payload: MessengerWebhookPayload) {
     await this.messengerService.handleWebhookPayload(payload);
     return { status: 'ok' };
-  }
-
-  // ── Connect — user provides Page ID + Page Access Token ──────────────────
-
-  @UseGuards(JwtAuthGuard)
-  @Post('messenger/connect')
-  async connect(
-    @Request() req: AuthenticatedRequest,
-    @Body() dto: ConnectMessengerDto,
-  ) {
-    await this.messengerService.connect(req.user.id, dto);
-    return { connected: true };
   }
 
   // ── Reply to an existing Messenger conversation ───────────────────────────

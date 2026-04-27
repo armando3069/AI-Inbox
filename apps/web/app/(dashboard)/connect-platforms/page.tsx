@@ -24,10 +24,11 @@ function ConnectPlatformsContent() {
   const {
     isAuthLoading, isCheckingPlatforms,
     connectedIds, selectedId, handleCardClick,
-    isConnecting, connectError, toast,
+    isConnecting, isDisconnecting, connectError, toast,
     tgBotToken, setTgBotToken, handleTelegramSubmit,
     waAccessToken, setWaAccessToken, waPhoneNumberId, setWaPhoneNumberId, handleWhatsappSubmit,
-    msPageId, setMsPageId, msPageAccessToken, setMsPageAccessToken, handleMessengerSubmit,
+    isFacebookStatusLoading, facebookConnection, facebookPendingPages,
+    handleFacebookConnect, handleFacebookPageSelect, handleFacebookDisconnect,
     emEmail, setEmEmail, emPassword, setEmPassword,
     emProvider, setEmProvider, emShowAdvanced, setEmShowAdvanced,
     emImapHost, setEmImapHost, emImapPort, setEmImapPort, emImapSecure, setEmImapSecure,
@@ -62,22 +63,22 @@ function ConnectPlatformsContent() {
           {/* ── Page header ── */}
           <div className="mb-7">
             <h1 className="text-[20px] font-semibold text-[var(--text-primary)] tracking-tight leading-none">
-              {isManaging ? "Gestionează platformele" : "Conectează-ți prima platformă"}
+              {isManaging ? "Manage platforms" : "Conectează-ți prima platformă"}
             </h1>
             <p className="mt-1.5 text-[13px] text-[var(--text-secondary)] leading-relaxed">
               {isManaging
-                ? "Adaugă sau gestionează canalele de comunicare conectate."
+                ? "Add or manage connected communication channels."
                 : "Alege canalul de comunicare pe care vrei să-l gestionezi."}
             </p>
           </div>
 
           {/* ── Step flow ── */}
           <div className="mb-8 flex items-center gap-3">
-            <StepItem number={1} label="Alege platforma" state={currentStep > 1 ? "completed" : "active"} />
+            <StepItem number={1} label="Choose platform" state={currentStep > 1 ? "completed" : "active"} />
             <div className="w-8 h-px bg-[var(--border-default)]" />
-            <StepItem number={2} label="Conectează"      state={currentStep === 2 ? "active" : "upcoming"} />
+            <StepItem number={2} label="Connect"      state={currentStep === 2 ? "active" : "upcoming"} />
             <div className="w-8 h-px bg-[var(--border-default)]" />
-            <StepItem number={3} label="Configurează"    state="upcoming" />
+            <StepItem number={3} label="Configure"    state="upcoming" />
           </div>
 
           {/* ── Two-column layout ── */}
@@ -85,7 +86,7 @@ function ConnectPlatformsContent() {
 
             {/* LEFT: Platform grid */}
             <div className="flex-1 min-w-0 space-y-3">
-              <p className={SECTION_LABEL}>Platforme disponibile</p>
+              <p className={SECTION_LABEL}>AVAILABLE PLATFORMS</p>
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {PLATFORMS.filter((p) => p.status === "available").map((platform) => (
                   <PlatformCard
@@ -101,7 +102,7 @@ function ConnectPlatformsContent() {
 
             {/* RIGHT: Configuration panel */}
             <div className="w-full lg:w-[420px] lg:shrink-0 space-y-3">
-              <p className={SECTION_LABEL}>Configurare integrare</p>
+              <p className={SECTION_LABEL}>Integration Setup</p>
 
               {selectedId === "telegram" && (
                 <TelegramForm
@@ -127,13 +128,15 @@ function ConnectPlatformsContent() {
 
               {selectedId === "messenger" && (
                 <MessengerForm
-                  pageId={msPageId}
-                  pageAccessToken={msPageAccessToken}
-                  onPageIdChange={setMsPageId}
-                  onPageAccessTokenChange={setMsPageAccessToken}
                   isConnecting={isConnecting}
+                  isDisconnecting={isDisconnecting}
+                  isLoadingState={isFacebookStatusLoading}
                   error={connectError}
-                  onSubmit={handleMessengerSubmit}
+                  connectedPage={facebookConnection}
+                  pendingPages={facebookPendingPages}
+                  onConnect={handleFacebookConnect}
+                  onDisconnect={handleFacebookDisconnect}
+                  onSelectPage={handleFacebookPageSelect}
                 />
               )}
 

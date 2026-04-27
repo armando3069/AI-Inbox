@@ -1,7 +1,11 @@
 import { createQueryKeys } from "@lukemorales/query-key-factory";
 import { request } from "@/lib/api/request";
 import { ROUTES } from "@/lib/api/routes";
-import type { PlatformAccountsResponse } from "./platforms.types";
+import type {
+  FacebookConnectionStatus,
+  FacebookPendingPage,
+  PlatformAccountsResponse,
+} from "./platforms.types";
 
 class PlatformsService {
   getAccounts = async (): Promise<PlatformAccountsResponse> => {
@@ -27,8 +31,28 @@ class PlatformsService {
   connectWhatsapp = (accessToken: string, phoneNumberId: string): Promise<void> =>
     request.post<void>(ROUTES.platforms.whatsappConnect, { accessToken, phoneNumberId });
 
-  connectMessenger = (pageId: string, pageAccessToken: string): Promise<void> =>
-    request.post<void>(ROUTES.platforms.messengerConnect, { pageId, pageAccessToken });
+  getFacebookConnectUrl = (): Promise<{ url: string }> =>
+    request.get<{ url: string }>(ROUTES.platforms.facebookConnect);
+
+  getFacebookPendingPages = (sessionId: string): Promise<{ pages: FacebookPendingPage[] }> =>
+    request.get<{ pages: FacebookPendingPage[] }>(ROUTES.platforms.facebookPendingPages, {
+      params: { sessionId },
+    });
+
+  selectFacebookPage = (
+    sessionId: string,
+    selectedPageId: string,
+  ): Promise<{ connected: boolean }> =>
+    request.post<{ connected: boolean }>(ROUTES.platforms.facebookSelectPage, {
+      sessionId,
+      selectedPageId,
+    });
+
+  getFacebookStatus = (): Promise<FacebookConnectionStatus> =>
+    request.get<FacebookConnectionStatus>(ROUTES.platforms.facebookStatus);
+
+  disconnectFacebook = (): Promise<{ success: boolean; message: string }> =>
+    request.delete<{ success: boolean; message: string }>(ROUTES.platforms.facebookDisconnect);
 
   connectEmail = (payload: {
     email: string;
