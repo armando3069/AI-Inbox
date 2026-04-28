@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Logger,
   Post,
   Query,
   Request,
@@ -19,6 +20,8 @@ import type { AuthenticatedRequest } from '../common/types';
 
 @Controller()
 export class MessengerController {
+  private readonly logger = new Logger(MessengerController.name);
+
   constructor(
     private readonly messengerService: MessengerService,
     private readonly config: ConfigService,
@@ -44,7 +47,12 @@ export class MessengerController {
   @Post('webhooks/messenger')
   @HttpCode(HttpStatus.OK)
   async handleWebhook(@Body() payload: MessengerWebhookPayload) {
-    await this.messengerService.handleWebhookPayload(payload);
+    void this.messengerService.handleWebhookPayload(payload).catch((error) => {
+      this.logger.error(
+        '[MESSENGER WEBHOOK] async processing failed',
+        error instanceof Error ? error.stack : String(error),
+      );
+    });
     return { status: 'ok' };
   }
 

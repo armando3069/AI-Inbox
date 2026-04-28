@@ -24,6 +24,7 @@ interface MessengerSender {
 interface MessengerMessage {
   mid: string;
   text?: string;
+  is_echo?: boolean;
 }
 
 interface MessengerMessaging {
@@ -31,6 +32,9 @@ interface MessengerMessaging {
   recipient: { id: string };
   timestamp: number;
   message?: MessengerMessage;
+  delivery?: unknown;
+  read?: unknown;
+  postback?: unknown;
 }
 
 interface MessengerEntry {
@@ -88,6 +92,11 @@ export class MessengerService {
         `Messenger API error: ${JSON.stringify(body)}`,
       );
     }
+
+    const body = await res.json().catch(() => ({}));
+    this.logger.debug(
+      `[MESSENGER SEND] recipient=${recipientId} status=${res.status} response=${JSON.stringify(body)}`,
+    );
   }
 
   // ── Reply to an existing conversation ────────────────────────────────────
@@ -127,7 +136,7 @@ export class MessengerService {
   // ── Handle incoming webhook payload ──────────────────────────────────────
 
   async handleWebhookPayload(payload: MessengerWebhookPayload): Promise<void> {
-    this.logger.debug(
+    this.logger.log(
       `[MESSENGER WEBHOOK] object=${payload.object} entries=${payload.entry?.length}`,
     );
 
@@ -136,7 +145,7 @@ export class MessengerService {
       return;
     }
 
-    for (const entry of payload.entry) {
+    for (const entry of payload.entry ?? []) {
       // entry.id is the Page ID that received the message
       const pageId = entry.id;
 
@@ -148,24 +157,49 @@ export class MessengerService {
         },
       });
 
-        if (!platformAccount) {
-          this.logger.warn(
-            `[MESSENGER WEBHOOK] No platform_account for page_id=${pageId}. ` +
+      if (!platformAccount) {
+        this.logger.warn(
+          `[MESSENGER WEBHOOK] No platform_account for page_id=${pageId}. ` +
             `Connect the page first via the Facebook OAuth flow.`,
+        );
+        continue;
+      }
+
+      for (const event of entry.messaging ?? []) {
+        const senderId = event.sender?.id;
+        const eventKeys = Object.keys(event);
+
+        this.logger.debug(
+          `[MESSENGER WEBHOOK] event page_id=${pageId} sender=${senderId ?? 'unknown'} keys=${eventKeys.join(',')} has_text=${Boolean(event.message?.text)} is_echo=${Boolean(event.message?.is_echo)}`,
+        );
+
+        // Skip echo events (messages sent by the page itself)
+        if (event.message?.is_echo || senderId === pageId) {
+          this.logger.debug(
+            `[MESSENGER WEBHOOK] ignored echo event page_id=${pageId} sender=${senderId ?? 'unknown'}`,
           );
           continue;
         }
 
-      for (const event of entry.messaging ?? []) {
-        // Skip echo events (messages sent by the page itself)
-        if (event.sender.id === pageId) continue;
+        if (!senderId) {
+          this.logger.warn(
+            `[MESSENGER WEBHOOK] ignored event without sender page_id=${pageId} keys=${eventKeys.join(',')}`,
+          );
+          continue;
+        }
+
         // Only handle standard text messages
-        if (!event.message?.text) continue;
+        if (!event.message?.text) {
+          this.logger.debug(
+            `[MESSENGER WEBHOOK] ignored non-text event page_id=${pageId} sender=${senderId} keys=${eventKeys.join(',')}`,
+          );
+          continue;
+        }
 
         await this.saveIncomingMessage(
           platformAccount,
           platformAccount.user_id,
-          event.sender.id,
+          senderId,
           event,
         );
       }
@@ -245,12 +279,19 @@ export class MessengerService {
 
     // Auto-reply if enabled for this user
     if (this.aiAssistantService.isAutoReplyEnabled(userId)) {
+      this.logger.log(
+        `[MESSENGER AUTO-REPLY] queued conversation=${conversation.id} user=${userId}`,
+      );
       this.triggerAutoReply(platformAccount, conversation, userId, text).catch(
         (e) =>
           this.logger.error(
             `[MESSENGER AUTO-REPLY] failed for conversation ${conversation!.id}`,
-            e,
+            e instanceof Error ? e.stack : String(e),
           ),
+      );
+    } else {
+      this.logger.debug(
+        `[MESSENGER AUTO-REPLY] disabled for user=${userId} conversation=${conversation.id}`,
       );
     }
   }
@@ -283,11 +324,9 @@ export class MessengerService {
       return;
     }
 
-    await this.sendApi(
-      platformAccount.access_token,
-      conversation.external_chat_id,
-      reply,
-    );
+    const pageAccessToken = this.decryptAccessToken(platformAccount.access_token);
+
+    await this.sendApi(pageAccessToken, conversation.external_chat_id, reply);
 
     const message = await this.prisma.messages.create({
       data: {
